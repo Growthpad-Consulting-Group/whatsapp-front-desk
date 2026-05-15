@@ -21,6 +21,7 @@ A multi-tenant SaaS for small service businesses. Businesses connect a WhatsApp 
 - Route groups: `(auth)` for login/signup, `(dashboard)` for protected app
 - Server Components by default; add `"use client"` only when needed (state, events, browser APIs)
 - `params` and `searchParams` in pages/layouts are **Promises** — always `await` them
+- **Scheduler**: cron-job.org (free) hits `/api/cron/*` routes every 5 min. All cron routes require `x-cron-secret` header matching `CRON_SECRET` env var — return 401 otherwise.
 - Auth-aware routing lives in `src/proxy.ts` (Next.js 16 renamed `middleware` → `proxy`; export named `proxy`, not `middleware`)
 - Supabase server client: `src/lib/supabase/server.ts` (Server Components, Actions, Route Handlers)
 - Supabase browser client: `src/lib/supabase/client.ts` (Client Components only)

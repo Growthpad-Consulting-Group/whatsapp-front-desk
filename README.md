@@ -74,7 +74,7 @@ Solo and small service businesses that already use WhatsApp to talk to clients:
 | Auth | Supabase Auth (email/password, magic link) |
 | Messaging | WhatsApp Cloud API (Meta direct) |
 | Payments | Paystack (primary), Stripe (planned) |
-| Scheduler | Supabase pg_cron (reminders, overdue checks) |
+| Scheduler | cron-job.org → secured `/api/cron/*` routes (reminders, overdue checks) |
 | Storage | Supabase Storage (invoice PDFs, branding) |
 | Hosting | Vercel (frontend) + Supabase (DB, auth, jobs) |
 
@@ -210,6 +210,7 @@ Visit [http://localhost:3000](http://localhost:3000). You'll be redirected to `/
 | `PAYSTACK_SECRET_KEY` | Yes | Paystack secret key |
 | `PAYSTACK_PUBLIC_KEY` | Yes | Paystack public key |
 | `NEXT_PUBLIC_APP_URL` | Yes | Full URL of the app (used for invoice links, OAuth callbacks) |
+| `CRON_SECRET` | Yes | Random secret — set as `x-cron-secret` header in cron-job.org |
 
 ---
 
@@ -299,7 +300,45 @@ npm run lint     # Run ESLint
 1. Create a production Supabase project
 2. Run migrations: `npx supabase db push --project-ref <ref>`
 3. Enable RLS on all tables (enforced by migration)
-4. Set up pg_cron for the reminder scheduler (week 5)
+4. Configure cron-job.org to hit `/api/cron/reminders` and `/api/cron/overdue` every 5 minutes (see Scheduler section below)
+
+---
+
+## Scheduler (cron-job.org)
+
+Reminders and overdue checks run via [cron-job.org](https://cron-job.org) hitting secured API routes every 5 minutes. No Supabase Pro plan or Redis required.
+
+**How it works:**
+
+1. cron-job.org sends a `POST` request to your endpoint with a secret header
+2. The route handler queries Postgres for due jobs (reminders to send, overdue invoices, expired deposit slots)
+3. Jobs are processed and logged — idempotency is enforced via a `reminder_sent_log` table
+
+**Endpoints (built in week 4–5):**
+
+| Endpoint | Trigger | Runs every |
+|---|---|---|
+| `POST /api/cron/reminders` | Appointment reminders (24h, 2h, confirmation) | 5 min |
+| `POST /api/cron/overdue` | Invoice overdue sequence | 5 min |
+| `POST /api/cron/deposits` | Release unpaid deposit slots after timeout | 5 min |
+
+**Security:** Every cron endpoint checks for the `x-cron-secret` header matching `CRON_SECRET` in your environment. Requests without it return 401.
+
+**Why not pg_cron or BullMQ?**
+- pg_cron requires Supabase Pro ($25/mo) — unnecessary at pilot scale
+- BullMQ + Redis (Upstash) adds cost and operational overhead — not needed until hundreds of businesses
+- cron-job.org free tier handles this comfortably and keeps all logic in app code where it's easy to test and debug
+
+**Add to `.env.local`:**
+```env
+CRON_SECRET=your-random-secret-string
+```
+
+**cron-job.org setup:**
+1. Create a free account at [cron-job.org](https://cron-job.org)
+2. Add three jobs pointing to your production URL
+3. Set execution interval to every 5 minutes
+4. Add a custom request header: `x-cron-secret: your-secret`
 
 ---
 

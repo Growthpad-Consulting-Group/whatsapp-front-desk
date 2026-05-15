@@ -114,7 +114,8 @@ Implementation is split into 6 weekly milestones followed by a post-MVP backlog.
 - [ ] 4.2 Sync confirmed appointments to Google Calendar on creation and update
 - [ ] 4.3 Fetch Google Calendar busy periods and incorporate into availability engine
 - [ ] 4.4 Handle Google Calendar sync errors gracefully (log, don't block booking)
-- [ ] 4.5 Build reminder scheduler using Supabase pg_cron (runs every 5 minutes)
+- [ ] 4.5 Build reminder scheduler: create `/api/cron/reminders` route secured by `x-cron-secret` header
+- [ ] 4.5a Add `CRON_SECRET` to env vars; configure cron-job.org to hit all three cron routes every 5 min
 - [ ] 4.6 Implement reminder: booking confirmation (immediate on creation)
 - [ ] 4.7 Implement reminder: 24-hour before appointment
 - [ ] 4.8 Implement reminder: 2-hour before appointment
@@ -130,12 +131,12 @@ Implementation is split into 6 weekly milestones followed by a post-MVP backlog.
 - [ ] 5.1 Implement Paystack payment link generation
 - [ ] 5.2 Implement Paystack webhook handler: verify signature → update payment status
 - [ ] 5.3 Implement deposit flow: send payment link after booking → hold slot as pending
-- [ ] 5.4 Implement slot auto-release: pg_cron job releases unpaid deposit slots after timeout
+- [ ] 5.4 Build `/api/cron/deposits` route: release unpaid deposit slots after timeout
 - [ ] 5.5 Build invoice auto-creation on appointment completion
 - [ ] 5.6 Build invoice manual creation from dashboard
 - [ ] 5.7 Build invoice page (shareable URL) and PDF generation
 - [ ] 5.8 Build invoices dashboard view with status filters
-- [ ] 5.9 Implement collections scheduler: due-date reminder, overdue 1–3 days, overdue 4–7 days
+- [ ] 5.9 Build `/api/cron/overdue` route: due-date reminder, overdue 1–3 days, overdue 4–7 days
 - [ ] 5.10 Implement payment promise: record date, pause overdue sequence
 - [ ] 5.11 Implement partial payment tracking: update outstanding balance, continue reminders
 - [ ] 5.12 Build manual payment marking UI (paid, partially paid, cancelled, disputed)
@@ -185,3 +186,4 @@ Implementation is split into 6 weekly milestones followed by a post-MVP backlog.
 - [ ] B.10 Subscription billing (Stripe for SaaS billing)
 - [ ] B.11 Team roles and permissions (staff can only see their own bookings)
 - [ ] B.12 Waitlist management for fully booked slots
+- [ ] B.13 Upstash Redis for conversation session caching and rate limiting (when 100+ businesses active)

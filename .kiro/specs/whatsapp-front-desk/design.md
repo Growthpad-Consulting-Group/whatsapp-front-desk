@@ -12,7 +12,7 @@ WhatsApp Front Desk is a multi-tenant SaaS. Each business is a fully isolated te
 ┌─────────────────────────────────────────────────────────┐
 │                     Vercel (Frontend)                    │
 │  Next.js App Router — Server Components + Server Actions │
-│  Route Handlers — API + Webhooks                         │
+│  Route Handlers — API + Webhooks + Cron endpoints        │
 └────────────────────────┬────────────────────────────────┘
                          │ HTTPS
 ┌────────────────────────▼────────────────────────────────┐
@@ -20,13 +20,18 @@ WhatsApp Front Desk is a multi-tenant SaaS. Each business is a fully isolated te
 │  PostgreSQL (RLS multi-tenancy)                          │
 │  Auth (email/password, magic link)                       │
 │  Storage (invoice PDFs, branding assets)                 │
-│  Edge Functions (scheduled jobs — reminders, overdue)    │
 └──────────┬──────────────────────────┬───────────────────┘
            │                          │
 ┌──────────▼──────────┐   ┌───────────▼──────────────────┐
 │  WhatsApp Cloud API  │   │  Paystack (payment links,     │
 │  (Meta direct)       │   │  webhooks, status updates)    │
 └─────────────────────┘   └──────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────┐
+│  cron-job.org (free tier)                                │
+│  Hits /api/cron/* every 5 min → reminders, overdue,      │
+│  deposit slot release                                    │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -213,7 +218,16 @@ Available slots are computed by:
 5. Returning the first 5 available slots
 
 ### Reminder scheduler
-Supabase `pg_cron` runs every 5 minutes and queries for:
+cron-job.org hits secured API routes every 5 minutes. Each route queries Postgres for due jobs and processes them. Idempotency is enforced via a `reminder_sent_log` table — a job is only processed if no matching row exists for that appointment/invoice + trigger combination.
+
+Routes (built in weeks 4–5):
+- `POST /api/cron/reminders` — appointment reminders (confirmation, 24h, 2h)
+- `POST /api/cron/overdue` — invoice overdue sequence
+- `POST /api/cron/deposits` — release unpaid deposit slots after timeout
+
+All cron routes require the `x-cron-secret` header matching `CRON_SECRET` env var. Requests without it return 401.
+
+Each route queries for:
 - Appointments where `start_at` is within the next 24h or 2h and the corresponding reminder has not been sent
 - Invoices where `due_date` is today and no due-date reminder has been sent
 - Invoices where `due_date` is 1–7 days past and the appropriate overdue reminder has not been sent
@@ -252,6 +266,9 @@ Payment received (webhook or manual) → status = paid / partially_paid
 | GET | /api/health | Health check |
 | GET/POST | /api/webhooks/whatsapp | WhatsApp Cloud API webhook |
 | POST | /api/webhooks/paystack | Paystack payment webhook |
+| POST | /api/cron/reminders | Appointment reminder jobs (secured by x-cron-secret) |
+| POST | /api/cron/overdue | Invoice overdue sequence jobs |
+| POST | /api/cron/deposits | Deposit slot auto-release jobs |
 | GET | /api/businesses/[id] | Get business details |
 | POST | /api/appointments | Create appointment |
 | PATCH | /api/appointments/[id] | Update appointment status |
