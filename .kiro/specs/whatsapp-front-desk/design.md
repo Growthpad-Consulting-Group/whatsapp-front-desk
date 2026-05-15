@@ -252,6 +252,150 @@ Payment received (webhook or manual) → status = paid / partially_paid
 | GET | /api/health | Health check |
 | GET/POST | /api/webhooks/whatsapp | WhatsApp Cloud API webhook |
 | POST | /api/webhooks/paystack | Paystack payment webhook |
+| GET | /api/businesses/[id] | Get business details |
+| POST | /api/appointments | Create appointment |
+| PATCH | /api/appointments/[id] | Update appointment status |
+| GET | /api/appointments | List appointments (with filters) |
+| POST | /api/invoices | Create invoice |
+| PATCH | /api/invoices/[id] | Update invoice |
+| GET | /api/customers | List customers |
+| POST | /api/customers | Create customer |
+
+---
+
+## Components and Interfaces
+
+### Next.js App Router Structure
+
+```
+app/
+  (auth)/
+    login/page.tsx
+    signup/page.tsx
+  (dashboard)/
+    layout.tsx                  — sidebar, auth guard
+    page.tsx                    — overview / stats
+    appointments/page.tsx       — calendar + list view
+    customers/page.tsx          — customer directory
+    invoices/page.tsx           — invoice list
+    invoices/[id]/page.tsx      — invoice detail
+    settings/
+      page.tsx                  — business profile
+      staff/page.tsx            — staff management
+      services/page.tsx         — service catalogue
+      templates/page.tsx        — message templates
+  api/
+    health/route.ts
+    webhooks/whatsapp/route.ts
+    webhooks/paystack/route.ts
+```
+
+### Server Actions
+
+| Action | File | Purpose |
+|---|---|---|
+| createAppointment | actions/appointments.ts | Validate slot, insert row, trigger confirmation |
+| updateAppointmentStatus | actions/appointments.ts | Status transition + side-effects |
+| createInvoice | actions/invoices.ts | Auto-number, insert, optional send |
+| sendInvoice | actions/invoices.ts | Status → sent, send WhatsApp message |
+| createPaymentLink | actions/payments.ts | Call Paystack API, insert payment_request |
+| upsertCustomer | actions/customers.ts | Find-or-create by phone + business_id |
+
+### WhatsApp Webhook Handler Interface
+
+```typescript
+// app/api/webhooks/whatsapp/route.ts
+POST body: WhatsAppWebhookPayload  // Meta Cloud API format
+→ verifySignature(req)
+→ parseInboundMessage(payload): InboundMessage
+→ resolveBusinessByPhone(wabaNumber): Business
+→ getOrCreateSession(businessId, customerPhone): ConversationSession
+→ handleState(session, message): { nextState, outboundMessages[] }
+→ persistSession(session)
+→ sendMessages(outboundMessages[])
+```
+
+### Paystack Webhook Handler Interface
+
+```typescript
+POST body: PaystackEvent
+→ verifySignature(req, PAYSTACK_SECRET)
+→ handleChargeSuccess(event): update payment_request + appointment/invoice status
+```
+
+---
+
+## Data Models
+
+> The full column-level schema is defined in the [Data Model](#data-model) section above. This section describes TypeScript types used in application code.
+
+```typescript
+type AppointmentStatus = 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'no_show'
+type PaymentStatus = 'unpaid' | 'deposit_pending' | 'deposit_paid' | 'paid' | 'partially_paid' | 'refunded'
+type InvoiceStatus = 'draft' | 'sent' | 'due' | 'overdue' | 'partially_paid' | 'paid' | 'cancelled' | 'disputed'
+type ConversationState = 'idle' | 'awaiting_service' | 'awaiting_slot' | 'awaiting_confirmation' | 'awaiting_deposit' | 'human_handoff'
+
+interface ConversationContext {
+  selectedServiceId?: string
+  selectedSlot?: string        // ISO 8601
+  selectedStaffId?: string
+  pendingDepositAmount?: number
+  retryCount?: number
+}
+
+interface InboundMessage {
+  from: string                 // E.164
+  wabaNumber: string           // receiving WABA number
+  messageId: string
+  type: 'text' | 'interactive' | 'button'
+  text?: string
+  buttonPayload?: string
+  timestamp: Date
+}
+
+interface AvailableSlot {
+  startAt: Date
+  endAt: Date
+  staffId: string | null
+}
+```
+
+---
+
+## Correctness Properties
+
+- **Idempotent reminders** — before sending any reminder, the scheduler checks `reminder_sent_log` for an existing entry keyed on `(business_id, trigger, reference_id)`. Duplicate sends are impossible even if the cron fires twice.
+- **Slot double-booking prevention** — slot availability is computed inside a Postgres transaction with a row-level lock on the appointments table for the relevant staff/time window. A unique partial index on `(business_id, staff_id, start_at)` where `status NOT IN ('cancelled')` enforces this at the DB level.
+- **RLS as primary isolation** — every Supabase query runs under the authenticated user's JWT. RLS policies on every table ensure cross-tenant data access is impossible regardless of application bugs.
+- **Webhook signature verification** — both WhatsApp and Paystack webhooks verify HMAC signatures before processing. Requests with invalid signatures return 401 immediately.
+- **Session expiry** — conversation sessions with `expires_at < now()` are treated as `idle` regardless of stored state, preventing stale flows from resuming incorrectly.
+
+---
+
+## Error Handling
+
+| Scenario | Handling |
+|---|---|
+| WhatsApp webhook signature invalid | Return 403, log warning, no processing |
+| Paystack webhook signature invalid | Return 401, log warning, no processing |
+| Inbound message for unknown business | Return 200 (to silence Meta retries), log and discard |
+| Slot no longer available at confirmation | Reply to customer with "slot taken", reset to `awaiting_slot` |
+| Paystack link creation failure | Log error, set `payment_status = unpaid`, notify owner via dashboard alert |
+| Supabase query error in webhook | Return 500, Meta will retry; handler is idempotent via `provider_message_id` dedup |
+| Reminder job failure | Log to `reminder_error_log`, retry on next cron tick (5 min), alert after 3 consecutive failures |
+| Session expired mid-flow | Reset to `idle`, send "session expired" message, prompt customer to start again |
+| Invalid customer input (3× retry) | Transition to `human_handoff`, notify staff via dashboard |
+
+---
+
+## Testing Strategy
+
+- **Unit tests** — pure functions: state machine transitions, slot availability computation, template variable substitution, invoice number generation. Run with Vitest.
+- **Integration tests** — Server Actions tested against a local Supabase instance (Docker). Covers RLS enforcement, appointment creation with conflict detection, and invoice lifecycle transitions.
+- **Webhook handler tests** — mock Meta and Paystack payloads exercising each conversation state and payment event. Signature verification tested with valid and tampered payloads.
+- **E2E tests** — Playwright covers the critical dashboard flows: login → create appointment, send invoice, mark paid.
+- **Cron job tests** — reminder scheduler tested with seeded appointments/invoices at known relative timestamps to verify correct trigger selection and idempotency.
+| POST | /api/webhooks/paystack | Paystack payment webhook |
 | GET | /auth/callback | Supabase OAuth callback |
 
 All business data mutations go through **Server Actions** (not REST endpoints) to keep auth context server-side and leverage Next.js form handling.

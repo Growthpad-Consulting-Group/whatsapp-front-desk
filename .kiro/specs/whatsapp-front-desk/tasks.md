@@ -1,4 +1,62 @@
-# Tasks — WhatsApp Front Desk
+# Implementation Plan: WhatsApp Front Desk
+
+## Overview
+
+Implementation is split into 6 weekly milestones followed by a post-MVP backlog. Each week builds on the previous: foundation → onboarding → WhatsApp flow → calendar/reminders → payments/invoices → polish/pilot.
+
+## Task Dependency Graph
+
+```json
+{
+  "waves": [
+    {
+      "wave": 1,
+      "label": "Foundation",
+      "tasks": ["1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "1.10", "1.11", "1.12"]
+    },
+    {
+      "wave": 2,
+      "label": "Business Onboarding and Service Setup",
+      "dependsOn": [1],
+      "tasks": ["2.1", "2.2", "2.3", "2.4", "2.5", "2.6", "2.7", "2.8", "2.9", "2.10", "2.11"]
+    },
+    {
+      "wave": 3,
+      "label": "WhatsApp Booking Flow",
+      "dependsOn": [2],
+      "tasks": ["3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+    },
+    {
+      "wave": 4,
+      "label": "Calendar Sync and Reminders",
+      "dependsOn": [3],
+      "tasks": ["4.1", "4.2", "4.3", "4.4", "4.5", "4.6", "4.7", "4.8", "4.9", "4.10", "4.11", "4.12"]
+    },
+    {
+      "wave": 5,
+      "label": "Invoices, Payments, and Collections",
+      "dependsOn": [3, 4],
+      "tasks": ["5.1", "5.2", "5.3", "5.4", "5.5", "5.6", "5.7", "5.8", "5.9", "5.10", "5.11", "5.12", "5.13"]
+    },
+    {
+      "wave": 6,
+      "label": "Dashboard Polish, Security, and Pilot Prep",
+      "dependsOn": [4, 5],
+      "tasks": ["6.1", "6.2", "6.3", "6.4", "6.5", "6.6", "6.7", "6.8", "6.9", "6.10", "6.11", "6.12", "6.13", "6.14"]
+    }
+  ],
+  "keyDependencies": [
+    { "from": "2.1", "to": "2.2", "note": "Schema migration must precede RLS policies" },
+    { "from": "3.2", "to": "3.3", "note": "State machine must precede webhook handler" },
+    { "from": "3.6", "to": "4.3", "note": "Availability engine must precede Google Calendar busy period integration" },
+    { "from": "4.9", "to": "5.9", "note": "Reminder idempotency log must precede collections scheduler" },
+    { "from": "5.1", "to": "5.2", "note": "Paystack client must precede webhook handler" },
+    { "from": "5.1", "to": "5.3", "note": "Paystack client must precede deposit flow" }
+  ]
+}
+```
+
+## Tasks
 
 ## Week 1 — Foundation (current)
 
@@ -103,6 +161,15 @@
 - [ ] 6.14 Pilot: onboard first 3–5 test businesses, monitor for errors
 
 ---
+
+## Notes
+
+- All database migrations must be applied to the Supabase project before any feature that depends on the schema is tested
+- RLS policies (2.2) must be verified after every new table is added
+- WhatsApp webhook signature validation (3.11) must be in place before the webhook is exposed to Meta in production
+- Google Calendar sync (Week 4) is an enhancement; the booking flow must work fully without it
+- Payment provider abstraction (5.13) should be implemented before adding any second provider
+- All Server Actions must validate `business_id` from the authenticated session, never from client input
 
 ## Backlog (Post-MVP)
 
