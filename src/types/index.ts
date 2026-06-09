@@ -65,6 +65,7 @@ export interface Business {
 export interface StaffMember {
   id: string;
   business_id: string;
+  user_id: string | null;
   name: string;
   role: UserRole;
   email: string;
@@ -184,3 +185,14 @@ export interface MessageLog {
 export type ActionResult<T = void> =
   | { success: true; data: T }
   | { success: false; error: string };
+
+export interface MessagingProvider {
+  sendText(to: string, body: string): Promise<{ messageId: string }>;
+  sendTemplate(to: string, templateName: string, languageCode: string, components?: any[]): Promise<{ messageId: string }>;
+}
+
+export interface AvailableSlot {
+  startAt: Date;
+  endAt: Date;
+  staffId: string | null;
+}

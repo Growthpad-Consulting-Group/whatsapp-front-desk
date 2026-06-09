@@ -77,70 +77,70 @@ Implementation is split into 6 weekly milestones followed by a post-MVP backlog.
 
 ## Week 2 — Business Onboarding and Service Setup
 
-- [ ] 2.1 Create Supabase project and run initial schema migration (all tables from design.md)
-- [ ] 2.2 Enable RLS on all tables and write policies scoped to business_id
-- [ ] 2.3 Build signup flow: email/password form → create auth user → create business row
-- [ ] 2.4 Build login form with email/password and magic link options
-- [ ] 2.5 Build onboarding wizard: business name → timezone → currency → WhatsApp number → operating hours
-- [ ] 2.6 Build services CRUD: create, edit, deactivate service with all fields from data model
-- [ ] 2.7 Build staff member management: add, edit, deactivate staff
-- [ ] 2.8 Build operating hours editor (per-day open/close times, closed toggle)
-- [ ] 2.9 Build settings page: cancellation policy, deposit defaults
-- [ ] 2.10 Write Server Actions for all business/service/staff mutations
-- [ ] 2.11 Seed default reminder rules for each new business on signup
+- [x] 2.1 Create Supabase project and run initial schema migration (all tables from design.md)
+- [x] 2.2 Enable RLS on all tables and write policies scoped to business_id
+- [x] 2.3 Build signup flow: email/password form → create auth user → create business row
+- [x] 2.4 Build login form with email/password and magic link options
+- [x] 2.5 Build onboarding wizard: business name → timezone → currency → WhatsApp number → operating hours
+- [x] 2.6 Build services CRUD: create, edit, deactivate service with all fields from data model
+- [x] 2.7 Build staff member management: add, edit, deactivate staff
+- [x] 2.8 Build operating hours editor (per-day open/close times, closed toggle)
+- [x] 2.9 Build settings page: cancellation policy, deposit defaults
+- [x] 2.10 Write Server Actions for all business/service/staff mutations
+- [x] 2.11 Seed default reminder rules for each new business on signup
 
 ---
 
 ## Week 3 — WhatsApp Booking Flow
 
-- [ ] 3.1 Implement WhatsApp Cloud API client (send text, send template)
-- [ ] 3.2 Implement conversation session table and state machine
-- [ ] 3.3 Build webhook POST handler: parse incoming message → load session → route to state handler
-- [ ] 3.4 Implement state: idle → greeting → service selection (numbered list)
-- [ ] 3.5 Implement state: service selected → availability engine → slot presentation (3–5 slots)
-- [ ] 3.6 Build availability engine: operating hours + existing appointments + buffer times
-- [ ] 3.7 Implement state: slot selected → create appointment → send confirmation
-- [ ] 3.8 Implement human handoff: flag session, notify owner via dashboard
-- [ ] 3.9 Implement fallback message for unrecognised input
-- [ ] 3.10 Log all inbound and outbound messages to message_logs
-- [ ] 3.11 Validate WhatsApp webhook signature (X-Hub-Signature-256)
-- [ ] 3.12 Build messages dashboard view: log, failed messages, handoff queue
+- [x] 3.1 Implement WhatsApp Cloud API client (send text, send template)
+- [x] 3.2 Implement conversation session table and state machine
+- [x] 3.3 Build webhook POST handler: parse incoming message → load session → route to state handler
+- [x] 3.4 Implement state: idle → greeting → service selection (numbered list)
+- [x] 3.5 Implement state: service selected → availability engine → slot presentation (3–5 slots)
+- [x] 3.6 Build availability engine: operating hours + existing appointments + buffer times
+- [x] 3.7 Implement state: slot selected → create appointment → send confirmation
+- [x] 3.8 Implement human handoff: flag session, notify owner via dashboard
+- [x] 3.9 Implement fallback message for unrecognised input
+- [x] 3.10 Log all inbound and outbound messages to message_logs
+- [x] 3.11 Validate WhatsApp webhook signature (X-Hub-Signature-256)
+- [x] 3.12 Build messages dashboard view: log, failed messages, handoff queue
 
 ---
 
 ## Week 4 — Calendar Sync and Reminders
 
-- [ ] 4.1 Implement Google Calendar OAuth flow (connect/disconnect per staff member)
-- [ ] 4.2 Sync confirmed appointments to Google Calendar on creation and update
-- [ ] 4.3 Fetch Google Calendar busy periods and incorporate into availability engine
-- [ ] 4.4 Handle Google Calendar sync errors gracefully (log, don't block booking)
-- [ ] 4.5 Build reminder scheduler: create `/api/cron/reminders` route secured by `x-cron-secret` header
-- [ ] 4.5a Add `CRON_SECRET` to env vars; configure cron-job.org to hit all three cron routes every 5 min
-- [ ] 4.6 Implement reminder: booking confirmation (immediate on creation)
-- [ ] 4.7 Implement reminder: 24-hour before appointment
-- [ ] 4.8 Implement reminder: 2-hour before appointment
-- [ ] 4.9 Implement reminder sent log to ensure idempotency
-- [ ] 4.10 Implement reschedule flow: customer replies R → new slot selection → update appointment
-- [ ] 4.11 Implement cancellation flow: customer replies C → check policy → cancel → free slot
-- [ ] 4.12 Build bookings dashboard view: calendar + list, filters by staff/service/status/date
+- [x] 4.1 Implement Google Calendar OAuth flow (connect/disconnect per staff member)
+- [x] 4.2 Sync confirmed appointments to Google Calendar on creation and update
+- [x] 4.3 Fetch Google Calendar busy periods and incorporate into availability engine
+- [x] 4.4 Handle Google Calendar sync errors gracefully (log, don't block booking)
+- [x] 4.5 Build reminder scheduler: create `/api/cron/reminders` route secured by `x-cron-secret` header
+- [x] 4.5a Add `CRON_SECRET` to env vars; configure cron-job.org to hit all three cron routes every 5 min
+- [x] 4.6 Implement reminder: booking confirmation (immediate on creation)
+- [x] 4.7 Implement reminder: 24-hour before appointment
+- [x] 4.8 Implement reminder: 2-hour before appointment
+- [x] 4.9 Implement reminder sent log to ensure idempotency
+- [x] 4.10 Implement reschedule flow: customer replies R → new slot selection → update appointment
+- [x] 4.11 Implement cancellation flow: customer replies C → check policy → cancel → free slot
+- [x] 4.12 Build bookings dashboard view: calendar + list, filters by staff/service/status/date
 
 ---
 
 ## Week 5 — Invoices, Payments, and Collections
 
-- [ ] 5.1 Implement Paystack payment link generation
-- [ ] 5.2 Implement Paystack webhook handler: verify signature → update payment status
-- [ ] 5.3 Implement deposit flow: send payment link after booking → hold slot as pending
-- [ ] 5.4 Build `/api/cron/deposits` route: release unpaid deposit slots after timeout
-- [ ] 5.5 Build invoice auto-creation on appointment completion
-- [ ] 5.6 Build invoice manual creation from dashboard
-- [ ] 5.7 Build invoice page (shareable URL) and PDF generation
-- [ ] 5.8 Build invoices dashboard view with status filters
-- [ ] 5.9 Build `/api/cron/overdue` route: due-date reminder, overdue 1–3 days, overdue 4–7 days
-- [ ] 5.10 Implement payment promise: record date, pause overdue sequence
-- [ ] 5.11 Implement partial payment tracking: update outstanding balance, continue reminders
-- [ ] 5.12 Build manual payment marking UI (paid, partially paid, cancelled, disputed)
-- [ ] 5.13 Implement payment provider abstraction interface (ready for Stripe/Flutterwave)
+- [x] 5.1 Implement Paystack payment link generation
+- [x] 5.2 Implement Paystack webhook handler: verify signature → update payment status
+- [x] 5.3 Implement deposit flow: send payment link after booking → hold slot as pending
+- [x] 5.4 Build `/api/cron/deposits` route: release unpaid deposit slots after timeout
+- [x] 5.5 Build invoice auto-creation on appointment completion
+- [x] 5.6 Build invoice manual creation from dashboard
+- [x] 5.7 Build invoice page (shareable URL) and PDF generation
+- [x] 5.8 Build invoices dashboard view with status filters
+- [x] 5.9 Build `/api/cron/overdue` route: due-date reminder, overdue 1–3 days, overdue 4–7 days
+- [x] 5.10 Implement payment promise: record date, pause overdue sequence
+- [x] 5.11 Implement partial payment tracking: update outstanding balance, continue reminders
+- [x] 5.12 Build manual payment marking UI (paid, partially paid, cancelled, disputed)
+- [x] 5.13 Implement payment provider abstraction interface (ready for Stripe/Flutterwave)
 
 ---
 

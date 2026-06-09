@@ -13,8 +13,8 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatCurrency(
   amount: number,
-  currency: string = "GHS",
-  locale: string = "en-GH"
+  currency: string = "KES",
+  locale: string = "en-KE"
 ): string {
   return new Intl.NumberFormat(locale, {
     style: "currency",
@@ -28,7 +28,7 @@ export function formatCurrency(
  */
 export function formatDate(
   date: Date | string,
-  timezone: string = "Africa/Accra"
+  timezone: string = "Africa/Nairobi"
 ): string {
   return new Intl.DateTimeFormat("en-GB", {
     timeZone: timezone,
@@ -43,7 +43,7 @@ export function formatDate(
  */
 export function formatDateTime(
   date: Date | string,
-  timezone: string = "Africa/Accra"
+  timezone: string = "Africa/Nairobi"
 ): string {
   return new Intl.DateTimeFormat("en-GB", {
     timeZone: timezone,

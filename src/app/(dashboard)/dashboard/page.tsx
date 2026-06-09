@@ -1,45 +1,62 @@
 import type { Metadata } from "next";
+import { requireBusiness, getTodayStats, getRecentMessages } from "@/lib/data/business";
+import { createClient } from "@/lib/supabase/server";
+import { DashboardClient } from "./dashboard-client";
 
 export const metadata: Metadata = {
-  title: "Today",
+  title: "Today — WhatsApp Front Desk",
 };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { business } = await requireBusiness();
+  const supabase = await createClient();
+
+  // Load basic stats
+  const { todayAppointments, pendingDeposits, unpaidInvoices, overdueInvoices } =
+    await getTodayStats(business.id);
+  const recentMessages = await getRecentMessages(business.id);
+
+  // Load cancelled bookings today
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const { data: cancelledAppointments } = await supabase
+    .from("appointments")
+    .select("id")
+    .eq("business_id", business.id)
+    .eq("status", "cancelled")
+    .gte("updated_at", todayStart.toISOString())
+    .lte("updated_at", todayEnd.toISOString());
+
+  const cancelledCount = cancelledAppointments?.length || 0;
+
+  // ----------------------------------------------------
+  // Onboarding Progress Checklist Queries
+  // ----------------------------------------------------
+  const [hoursRes, servicesRes, staffRes] = await Promise.all([
+    supabase.from("operating_hours").select("id").eq("business_id", business.id),
+    supabase.from("services").select("id").eq("business_id", business.id).eq("active", true),
+    supabase.from("staff_members").select("id, calendar_connected").eq("business_id", business.id),
+  ]);
+
+  const onboardingSteps = {
+    hoursConfigured: (hoursRes.data?.length || 0) > 0,
+    servicesAdded: (servicesRes.data?.length || 0) > 0,
+    calendarConnected: (staffRes.data || []).some((s) => s.calendar_connected),
+  };
+
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-foreground mb-6">Today</h1>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard label="Appointments today" value="—" />
-        <StatCard label="Pending deposits" value="—" />
-        <StatCard label="Unpaid invoices" value="—" />
-        <StatCard label="Overdue balances" value="—" />
-      </div>
-
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <section className="bg-card border border-border rounded-xl p-6">
-          <h2 className="text-base font-medium text-foreground mb-4">
-            Upcoming bookings
-          </h2>
-          <p className="text-sm text-muted-foreground">No bookings yet.</p>
-        </section>
-
-        <section className="bg-card border border-border rounded-xl p-6">
-          <h2 className="text-base font-medium text-foreground mb-4">
-            Recent messages
-          </h2>
-          <p className="text-sm text-muted-foreground">No messages yet.</p>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-card border border-border rounded-xl p-5">
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-foreground">{value}</p>
-    </div>
+    <DashboardClient
+      todayAppointments={todayAppointments}
+      pendingDeposits={pendingDeposits}
+      unpaidInvoices={unpaidInvoices}
+      overdueInvoices={overdueInvoices}
+      recentMessages={recentMessages}
+      cancelledCount={cancelledCount}
+      onboardingSteps={onboardingSteps}
+      business={business}
+    />
   );
 }

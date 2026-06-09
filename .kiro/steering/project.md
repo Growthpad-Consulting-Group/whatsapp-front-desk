@@ -13,7 +13,7 @@ A multi-tenant SaaS for small service businesses. Businesses connect a WhatsApp 
 - **Database**: PostgreSQL via Supabase (RLS for multi-tenancy)
 - **Auth**: Supabase Auth (email/password + magic link)
 - **Messaging**: WhatsApp Cloud API (Meta direct)
-- **Payments**: Paystack (primary), Stripe (future)
+- **Payments**: Paystack (primary for Kenya/KES + M-Pesa), Stripe (future international)
 - **Hosting**: Vercel (frontend), Supabase (DB + auth)
 
 ## Key conventions
@@ -21,6 +21,7 @@ A multi-tenant SaaS for small service businesses. Businesses connect a WhatsApp 
 - Route groups: `(auth)` for login/signup, `(dashboard)` for protected app
 - Server Components by default; add `"use client"` only when needed (state, events, browser APIs)
 - `params` and `searchParams` in pages/layouts are **Promises** — always `await` them
+- **Default currency**: `KES` (Kenya launch). Currency is a per-business setting — Ghana uses `GHS`, Nigeria uses `NGN`, USD for international clients. Never hardcode a currency symbol.
 - **Scheduler**: cron-job.org (free) hits `/api/cron/*` routes every 5 min. All cron routes require `x-cron-secret` header matching `CRON_SECRET` env var — return 401 otherwise.
 - Auth-aware routing lives in `src/proxy.ts` (Next.js 16 renamed `middleware` → `proxy`; export named `proxy`, not `middleware`)
 - Supabase server client: `src/lib/supabase/server.ts` (Server Components, Actions, Route Handlers)

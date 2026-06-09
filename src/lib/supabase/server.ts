@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { Database } from "@/types/database";
 
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+
 /**
  * Supabase client for use in Server Components, Server Actions, and Route Handlers.
  * Reads and writes cookies via the Next.js cookies() API.
@@ -30,5 +32,16 @@ export async function createClient() {
         },
       },
     }
+  );
+}
+
+/**
+ * Supabase client that uses the service_role key.
+ * This bypasses RLS and should be used ONLY on the server for admin/background operations.
+ */
+export function createAdminClient() {
+  return createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 }

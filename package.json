@@ -6,9 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "gen:types": "supabase gen types typescript --project-id kxdzlmqyyctnebucpbvz --schema public > src/types/database.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@iconify/react": "^6.0.2",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
     "clsx": "^2.1.1",

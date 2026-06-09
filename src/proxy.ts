@@ -38,7 +38,18 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Routes that don't require authentication
-  const publicPrefixes = ["/login", "/signup", "/auth/callback", "/book", "/api/webhooks"];
+  const publicPrefixes = [
+    "/login",
+    "/signup",
+    "/onboarding",
+    "/auth/callback",
+    "/book",
+    "/api/webhooks",
+    "/api/auth/google/callback",
+    "/api/cron",
+    "/invoice",
+    "/pay"
+  ];
   const isPublic = publicPrefixes.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublic) {

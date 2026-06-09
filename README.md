@@ -73,7 +73,7 @@ Solo and small service businesses that already use WhatsApp to talk to clients:
 | Database | PostgreSQL via Supabase (RLS multi-tenancy) |
 | Auth | Supabase Auth (email/password, magic link) |
 | Messaging | WhatsApp Cloud API (Meta direct) |
-| Payments | Paystack (primary), Stripe (planned) |
+| Payments | Paystack (Kenya/KES + M-Pesa), Stripe (planned) |
 | Scheduler | cron-job.org → secured `/api/cron/*` routes (reminders, overdue checks) |
 | Storage | Supabase Storage (invoice PDFs, branding) |
 | Hosting | Vercel (frontend) + Supabase (DB, auth, jobs) |
