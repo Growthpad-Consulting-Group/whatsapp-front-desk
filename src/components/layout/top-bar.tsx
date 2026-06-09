@@ -1,7 +1,7 @@
 "use client";
 
 import { logoutAction } from "@/actions/auth";
-import { LogOut } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 interface TopBarProps {
   businessName: string;
@@ -30,7 +30,7 @@ export function TopBar({ businessName, staffName }: TopBarProps) {
             className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Sign out"
           >
-            <LogOut className="h-4 w-4" aria-hidden="true" />
+            <Icon icon="solar:logout-broken" className="h-4 w-4" aria-hidden="true" />
             <span className="hidden sm:inline">Sign out</span>
           </button>
         </form>

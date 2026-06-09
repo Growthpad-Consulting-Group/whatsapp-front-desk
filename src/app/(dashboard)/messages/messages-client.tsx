@@ -4,7 +4,9 @@ import { useState } from "react";
 import { releaseHandoffAction } from "@/actions/messages";
 import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/utils";
-import { MessageSquare, RefreshCw, UserCheck, Bot, Check, CheckCheck, AlertTriangle } from "lucide-react";
+import { Icon } from "@iconify/react";
+import PageHeader from "@/components/ui/PageHeader";
+import EmptyState from "@/components/ui/EmptyState";
 
 interface HandoffSession {
   id: string;
@@ -58,25 +60,32 @@ export function MessagesClient({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "sent":
-        return <Check className="h-3 w-3 text-muted-foreground" />;
+        return <Icon icon="solar:check-broken" className="h-3 w-3 text-muted-foreground" />;
       case "delivered":
-        return <CheckCheck className="h-3 w-3 text-muted-foreground" />;
+        return <Icon icon="solar:double-alt-check-broken" className="h-3 w-3 text-muted-foreground" />;
       case "read":
-        return <CheckCheck className="h-3 w-3 text-primary" />;
+        return <Icon icon="solar:double-alt-check-broken" className="h-3 w-3 text-primary" />;
       case "failed":
-        return <AlertTriangle className="h-3 w-3 text-destructive" />;
+        return <Icon icon="solar:danger-triangle-broken" className="h-3 w-3 text-destructive" />;
       default:
         return null;
     }
   };
 
   return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Messages"
+        icon="solar:chat-round-dots-bold-duotone"
+        iconBgColor="bg-linear-to-br from-blue-600 to-blue-500"
+        description="Handoff queue and live inbox feed"
+      />
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
       {/* Human Handoff Queue (Left column) */}
       <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
         <div>
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <RefreshCw className="h-4 w-4 text-primary animate-pulse" />
+            <Icon icon="solar:refresh-broken" className="h-4 w-4 text-primary animate-pulse" />
             Handoff Queue
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -86,7 +95,7 @@ export function MessagesClient({
 
         {handoffs.length === 0 ? (
           <div className="text-center py-8 bg-muted/30 border border-border/80 border-dashed rounded-xl">
-            <Bot className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+            <Icon icon="solar:robot-broken" className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
             <p className="text-xs font-medium text-foreground">All clear</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">
               The automated booking bot is handling all conversations.
@@ -116,7 +125,7 @@ export function MessagesClient({
                   loading={releasingId === session.id}
                   onClick={() => handleRelease(session.customer_phone, session.id)}
                 >
-                  <UserCheck className="h-3.5 w-3.5" /> Return to Bot
+                  <Icon icon="solar:user-check-broken" className="h-3.5 w-3.5" /> Return to Bot
                 </Button>
               </div>
             ))}
@@ -128,7 +137,7 @@ export function MessagesClient({
       <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col min-h-[500px]">
         <div>
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <Icon icon="solar:chat-square-broken" className="h-4 w-4 text-muted-foreground" />
             Live Message Feed
           </h2>
           <p className="text-xs text-muted-foreground">
@@ -137,13 +146,11 @@ export function MessagesClient({
         </div>
 
         {logs.length === 0 ? (
-          <div className="text-center py-16 flex-1 flex flex-col items-center justify-center">
-            <MessageSquare className="h-10 w-10 text-muted-foreground mb-2" />
-            <p className="text-sm font-medium text-foreground">No message logs</p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Messages will populate here as clients interact with WhatsApp.
-            </p>
-          </div>
+          <EmptyState
+            icon="solar:chat-broken"
+            title="No message logs"
+            description="Messages will populate here as clients interact with WhatsApp."
+          />
         ) : (
           <div className="space-y-4 flex-1 overflow-y-auto max-h-[600px] pr-2">
             {logs.map((log) => {
@@ -185,6 +192,7 @@ export function MessagesClient({
           </div>
         )}
       </div>
+    </div>
     </div>
   );
 }

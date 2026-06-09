@@ -5,6 +5,7 @@ import { updateMessageTemplateAction } from "@/actions/business";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@iconify/react";
 import { cn } from "@/lib/utils";
+import PageHeader from "@/components/ui/PageHeader";
 
 interface Template {
   id: string;
@@ -75,6 +76,7 @@ export function TemplatesClient({ initialTemplates, business }: TemplatesClientP
   const [editorBody, setEditorBody] = useState(activeTemplate.body);
   const [saveLoading, setSaveLoading] = useState(false);
   const [metaLoading, setMetaLoading] = useState(false);
+  const [saveFeedback, setSaveFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
 
   // Sync editor field when active template changes
   const [prevType, setPrevType] = useState(activeType);
@@ -121,10 +123,11 @@ export function TemplatesClient({ initialTemplates, business }: TemplatesClientP
         const filtered = prev.filter((t) => t.type !== activeType);
         return [...filtered, res.data];
       });
-      alert("Template content saved successfully!");
+      setSaveFeedback({ ok: true, msg: "Template saved successfully!" });
     } else {
-      alert(res.error || "Failed to save template.");
+      setSaveFeedback({ ok: false, msg: res.error || "Failed to save template." });
     }
+    setTimeout(() => setSaveFeedback(null), 3000);
   };
 
   // Mock Meta Approval flow trigger
@@ -140,7 +143,8 @@ export function TemplatesClient({ initialTemplates, business }: TemplatesClientP
 
     if (!resPending.success || !resPending.data) {
       setMetaLoading(false);
-      alert(resPending.error || "Failed to submit for approval.");
+      setSaveFeedback({ ok: false, msg: resPending.error || "Failed to submit for approval." });
+      setTimeout(() => setSaveFeedback(null), 3000);
       return;
     }
 
@@ -164,7 +168,8 @@ export function TemplatesClient({ initialTemplates, business }: TemplatesClientP
           const filtered = prev.filter((t) => t.type !== activeType);
           return [...filtered, resApproved.data];
         });
-        alert("WhatsApp Template has been APPROVED by Meta!");
+        setSaveFeedback({ ok: true, msg: "WhatsApp Template approved by Meta!" });
+        setTimeout(() => setSaveFeedback(null), 3000);
       }
     }, 1500);
   };
@@ -179,6 +184,13 @@ export function TemplatesClient({ initialTemplates, business }: TemplatesClientP
   const activeStatus = statusLabels[activeTemplate.approval_status] || statusLabels.local;
 
   return (
+    <div className="space-y-6">
+    <PageHeader
+      title="Message Templates"
+      icon="solar:document-text-bold-duotone"
+      iconBgColor="bg-linear-to-br from-blue-600 to-blue-500"
+      description="Customise the WhatsApp messages sent automatically at each booking stage"
+    />
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
       {/* Sidebar - Template Types List */}
       <div className="lg:col-span-4 bg-card/65 backdrop-blur-md border border-border rounded-2xl p-4 shadow-sm h-fit space-y-2">
@@ -299,9 +311,16 @@ export function TemplatesClient({ initialTemplates, business }: TemplatesClientP
               Save Changes
             </Button>
           </div>
+          {saveFeedback && (
+            <p className={`text-xs font-medium flex items-center gap-1 ${saveFeedback.ok ? "text-green-600 dark:text-green-400" : "text-destructive"}`}>
+              <Icon icon={saveFeedback.ok ? "solar:check-circle-broken" : "solar:danger-triangle-broken"} className="h-3.5 w-3.5" />
+              {saveFeedback.msg}
+            </p>
+          )}
 
         </div>
       </div>
+    </div>
     </div>
   );
 }

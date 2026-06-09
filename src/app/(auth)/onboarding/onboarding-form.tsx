@@ -5,6 +5,7 @@ import { createBusinessAction } from "@/actions/onboarding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { INDUSTRIES, TIMEZONES, CURRENCIES } from "@/lib/validations/onboarding";
+import { GlassCard } from "@/components/ui/GlassCard";
 
 interface OnboardingFormProps {
   userName?: string;
@@ -14,6 +15,7 @@ export function OnboardingForm({ userName }: OnboardingFormProps) {
   const [state, dispatch, pending] = useActionState(createBusinessAction, undefined);
 
   return (
+    <GlassCard mode="light" gradient className="p-8 w-full max-w-sm">
     <form action={dispatch} className="space-y-5">
       {userName && (
         <p className="text-sm text-muted-foreground">
@@ -101,5 +103,6 @@ export function OnboardingForm({ userName }: OnboardingFormProps) {
         Set up my front desk →
       </Button>
     </form>
+    </GlassCard>
   );
 }

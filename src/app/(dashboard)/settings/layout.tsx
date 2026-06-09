@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import PageHeader from "@/components/ui/PageHeader";
 import { SettingsNav } from "./settings-nav";
 
 export const metadata: Metadata = {
@@ -13,18 +13,16 @@ export default function SettingsLayout({
 }) {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Manage your business profile, service offerings, team members, and operating hours.
-        </p>
-      </div>
+      <PageHeader
+        title="Settings"
+        icon="solar:settings-bold-duotone"
+        iconBgColor="bg-linear-to-br from-blue-600 to-blue-500"
+        description="Manage your business profile, services, team, and operating hours."
+      />
 
-      <div className="border-b border-border">
-        <SettingsNav />
-      </div>
+      <SettingsNav />
 
-      <div className="mt-6">{children}</div>
+      <div>{children}</div>
     </div>
   );
 }

@@ -5,6 +5,69 @@ import Link from "next/link";
 import { formatDateTime, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Icon } from "@iconify/react";
+import { AnimatedMetricCard } from "@/components/ui/AnimatedMetricCard";
+import { DashboardCharts } from "@/components/ui/DashboardCharts";
+
+type ActivityItem = {
+  id: string;
+  updated_at?: string;
+  timestamp?: string;
+  start_at?: string;
+  created_at?: string;
+  content_summary?: string;
+  status?: string;
+  direction?: string;
+  customers?: { name?: string; phone?: string };
+  services?: { name?: string };
+};
+
+function ActivitySection({ appointments, messages, timezone }: { appointments: ActivityItem[]; messages: ActivityItem[]; timezone: string }) {
+  const items = [...appointments, ...messages]
+    .sort((a, b) =>
+      new Date(b.updated_at ?? b.timestamp ?? 0).getTime() -
+      new Date(a.updated_at ?? a.timestamp ?? 0).getTime()
+    )
+    .slice(0, 10);
+
+  return (
+    <section className="bg-card/75 backdrop-blur-md border border-border rounded-2xl p-6 shadow-sm">
+      <h2 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
+        <Icon icon="solar:history-broken" className="h-4 w-4 text-muted-foreground" />
+        Recent Activity
+      </h2>
+      {items.length === 0 ? (
+        <div className="text-center py-10 text-muted-foreground space-y-2">
+          <Icon icon="solar:bell-off-broken" className="h-10 w-10 mx-auto text-muted-foreground/50" />
+          <p className="text-xs">No recent activity. Bookings and messages will appear here.</p>
+        </div>
+      ) : (
+        <ul className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
+          {items.map((item) => (
+            <li key={item.id} className="flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/30 transition-colors">
+              <span className={cn("mt-1.5 h-2 w-2 rounded-full shrink-0", item.content_summary ? "bg-primary" : "bg-green-500")} />
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold text-foreground truncate">
+                  {item.content_summary
+                    ? (item.customers?.name ?? item.customers?.phone ?? "Client")
+                    : `${item.customers?.name ?? "Booking"} — ${item.services?.name ?? ""}`}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
+                  {item.content_summary ?? `Status: ${item.status}`}
+                </p>
+              </div>
+              <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5 whitespace-nowrap">
+                {formatDateTime(item.updated_at ?? item.timestamp ?? item.start_at ?? "", timezone)}
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+interface WeeklyBookingData { labels: string[]; confirmed: number[]; cancelled: number[]; }
+interface RevenueData { labels: string[]; revenue: number[]; }
 
 interface DashboardClientProps {
   todayAppointments: any[];
@@ -19,6 +82,8 @@ interface DashboardClientProps {
     calendarConnected: boolean;
   };
   business: any;
+  weeklyBookings?: WeeklyBookingData;
+  revenueData?: RevenueData;
 }
 
 export function DashboardClient({
@@ -30,6 +95,8 @@ export function DashboardClient({
   cancelledCount,
   onboardingSteps,
   business,
+  weeklyBookings,
+  revenueData,
 }: DashboardClientProps) {
   
   // Greeting message based on local time
@@ -188,42 +255,65 @@ export function DashboardClient({
 
       {/* Metrics Cards Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-card/65 border border-border/50 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium mb-2">
-            <Icon icon="mdi:calendar-multiselect" className="h-4 w-4" />
-            <span>Today&apos;s Bookings</span>
-          </div>
-          <p className="text-3xl font-bold text-foreground">{todayAppointments.length}</p>
-        </div>
-
-        <div className="bg-card/65 border border-border/50 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium mb-2">
-            <Icon icon="mdi:cash-multiple" className="h-4 w-4" />
-            <span>Pending Deposits</span>
-          </div>
-          <p className="text-3xl font-bold text-foreground">{pendingDeposits}</p>
-        </div>
-
-        <div className="bg-card/65 border border-border/50 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium mb-2">
-            <Icon icon="mdi:file-alert-outline" className="h-4 w-4" />
-            <span>Unpaid Invoices</span>
-          </div>
-          <p className="text-3xl font-bold text-foreground">{unpaidInvoices}</p>
-        </div>
-
-        <div className="bg-card/65 border border-border/50 rounded-2xl p-5 shadow-sm">
-          <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium mb-2">
-            <Icon icon="mdi:close-circle-outline" className="h-4 w-4" />
-            <span>Cancellations Today</span>
-          </div>
-          <p className="text-3xl font-bold text-foreground">{cancelledCount}</p>
-        </div>
+        <AnimatedMetricCard
+          title="Today's Bookings"
+          value={todayAppointments.length}
+          icon="solar:calendar-date-broken"
+          color="green"
+          variant="card"
+          mode="light"
+        />
+        <AnimatedMetricCard
+          title="Pending Deposits"
+          value={pendingDeposits}
+          icon="solar:wallet-money-broken"
+          color="orange"
+          variant="card"
+          mode="light"
+        />
+        <AnimatedMetricCard
+          title="Unpaid Invoices"
+          value={unpaidInvoices}
+          icon="solar:file-text-broken"
+          color="purple"
+          variant="card"
+          mode="light"
+        />
+        <AnimatedMetricCard
+          title="Cancellations Today"
+          value={cancelledCount}
+          icon="solar:close-circle-broken"
+          color="red"
+          variant="card"
+          mode="light"
+        />
       </div>
+
+      {/* Needs Attention */}
+      {overdueInvoices > 0 && (
+        <div className="flex items-center gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/8 px-5 py-3.5 text-sm">
+          <Icon icon="solar:danger-triangle-bold-duotone" className="h-5 w-5 text-amber-500 shrink-0" />
+          <span className="font-medium text-foreground">
+            <span className="text-amber-600 dark:text-amber-400 font-bold">{overdueInvoices} overdue {overdueInvoices === 1 ? "invoice" : "invoices"}</span> need attention.
+          </span>
+          <a href="/invoices?status=overdue" className="ml-auto text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline shrink-0">
+            Review →
+          </a>
+        </div>
+      )}
+
+      {/* Charts */}
+      {weeklyBookings && revenueData && (
+        <DashboardCharts
+          weeklyBookings={weeklyBookings}
+          revenueData={revenueData}
+          currency={business.currency || "KES"}
+        />
+      )}
 
       {/* Bottom Dual Grid - Agenda & Messages */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* Agenda Section */}
         <section className="bg-card/75 backdrop-blur-md border border-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
           <div>
@@ -237,7 +327,7 @@ export function DashboardClient({
                 <p className="text-xs">No appointments scheduled for today.</p>
               </div>
             ) : (
-              <ul className="space-y-4 max-h-[300px] overflow-y-auto pr-1">
+              <ul className="space-y-4 max-h-75 overflow-y-auto pr-1">
                 {todayAppointments.map((appt: any) => (
                   <li key={appt.id} className="flex items-start justify-between gap-3 bg-muted/20 border border-border/30 rounded-xl p-3">
                     <div className="min-w-0">
@@ -277,7 +367,7 @@ export function DashboardClient({
                 <p className="text-xs">No messages logged yet. Check back shortly.</p>
               </div>
             ) : (
-              <ul className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
+              <ul className="space-y-3 max-h-75 overflow-y-auto pr-1">
                 {recentMessages.map((msg: any) => (
                   <li key={msg.id} className="flex items-start gap-3 bg-muted/20 border border-border/30 rounded-xl p-3">
                     <span
@@ -313,6 +403,13 @@ export function DashboardClient({
         </section>
 
       </div>
+
+      {/* Recent Activity Feed */}
+      <ActivitySection
+        appointments={todayAppointments}
+        messages={recentMessages}
+        timezone={business.timezone}
+      />
     </div>
   );
 }

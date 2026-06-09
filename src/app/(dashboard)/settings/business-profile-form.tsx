@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Icon } from "@iconify/react";
 import { updateBusinessSettingsAction } from "@/actions/business";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,18 +13,32 @@ interface BusinessProfileFormProps {
   isOwner: boolean;
 }
 
+function SectionHeader({ icon, title, description }: { icon: string; title: string; description: string }) {
+  return (
+    <div className="flex items-start gap-3 pb-4 border-b border-border/60">
+      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+        <Icon icon={icon} className="w-5 h-5 text-primary" />
+      </div>
+      <div>
+        <h2 className="text-base font-semibold text-foreground">{title}</h2>
+        <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
+      </div>
+    </div>
+  );
+}
+
 export function BusinessProfileForm({ business, isOwner }: BusinessProfileFormProps) {
   const [state, dispatch, pending] = useActionState(updateBusinessSettingsAction, undefined);
 
   return (
-    <form action={dispatch} className="space-y-6">
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Business Profile</h2>
-          <p className="text-sm text-muted-foreground">
-            Update your business identity, contact information, and regional preferences.
-          </p>
-        </div>
+    <form action={dispatch} className="space-y-5">
+      {/* Business Identity */}
+      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
+        <SectionHeader
+          icon="solar:buildings-2-broken"
+          title="Business Profile"
+          description="Your business identity, contact details, and regional settings."
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
@@ -104,24 +119,24 @@ export function BusinessProfileForm({ business, isOwner }: BusinessProfileFormPr
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Booking & Payment Policies</h2>
-          <p className="text-sm text-muted-foreground">
-            Configure default settings for client cancellations and deposit payments.
-          </p>
-        </div>
+      {/* Booking & Payment Policies */}
+      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
+        <SectionHeader
+          icon="solar:shield-check-broken"
+          title="Booking & Payment Policies"
+          description="Default rules for client cancellations and deposit requirements."
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
-            label="Cancellation Policy (Hours)"
+            label="Cancellation Window (Hours)"
             name="cancellation_hours"
             type="number"
             min="0"
             max="168"
             defaultValue={business.cancellation_hours}
             disabled={!isOwner}
-            hint="Hours before appointment client is allowed to cancel."
+            hint="Minimum hours before appointment a client can cancel."
             required
           />
 
@@ -133,18 +148,24 @@ export function BusinessProfileForm({ business, isOwner }: BusinessProfileFormPr
             max="100"
             defaultValue={business.deposit_default_percent ?? ""}
             disabled={!isOwner}
-            hint="Leave blank if deposit is not required by default."
+            hint="Leave blank if no deposit is required by default."
           />
         </div>
       </div>
 
       {isOwner && (
-        <div className="flex justify-end gap-3">
+        <div className="flex items-center justify-end gap-3">
           {state?.success === false && (
-            <p className="text-sm text-destructive self-center">{state.error}</p>
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <Icon icon="solar:close-circle-broken" className="w-4 h-4 shrink-0" />
+              {state.error}
+            </div>
           )}
           {state?.success === true && (
-            <p className="text-sm text-green-600 dark:text-green-400 self-center">Settings saved successfully!</p>
+            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+              <Icon icon="solar:check-circle-broken" className="w-4 h-4 shrink-0" />
+              Settings saved successfully!
+            </div>
           )}
           <Button type="submit" loading={pending}>
             Save Settings

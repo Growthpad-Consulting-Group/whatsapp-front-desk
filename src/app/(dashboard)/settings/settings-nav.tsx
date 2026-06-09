@@ -1,42 +1,27 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import { Icon } from "@iconify/react";
+import { usePathname, useRouter } from "next/navigation";
+import { Tabs } from "@/components/ui/Tabs";
+
+const TABS = [
+  { key: "/settings",           label: "General & Hours",  icon: "solar:settings-broken" },
+  { key: "/settings/services",  label: "Services",          icon: "solar:tag-price-broken" },
+  { key: "/settings/staff",     label: "Staff",             icon: "solar:users-group-rounded-broken" },
+  { key: "/settings/templates", label: "Templates",         icon: "solar:document-text-broken" },
+];
 
 export function SettingsNav() {
   const pathname = usePathname();
+  const router = useRouter();
 
-  const tabs = [
-    { href: "/settings", label: "General & Hours", icon: "mdi:office-building" },
-    { href: "/settings/services", label: "Services", icon: "mdi:tune" },
-    { href: "/settings/staff", label: "Staff", icon: "mdi:account-group" },
-    { href: "/settings/templates", label: "Templates", icon: "mdi:file-document-edit" },
-  ];
+  const active = TABS.find((t) => t.key === pathname)?.key ?? "/settings";
 
   return (
-    <nav className="flex space-x-2" aria-label="Settings navigation">
-      {tabs.map((tab) => {
-        const active = pathname === tab.href;
-
-        return (
-          <Link
-            key={tab.href}
-            href={tab.href}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-all duration-200",
-              active
-                ? "border-primary text-primary bg-primary/5 rounded-t-lg"
-                : "border-transparent text-muted-foreground hover:text-foreground hover:border-muted-foreground/35"
-            )}
-            aria-current={active ? "page" : undefined}
-          >
-            <Icon icon={tab.icon} className="h-4 w-4" />
-            {tab.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <Tabs
+      tabs={TABS}
+      activeTab={active}
+      onChange={(key) => router.push(key)}
+      className="w-full sm:w-auto"
+    />
   );
 }

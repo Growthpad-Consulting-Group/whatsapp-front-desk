@@ -1,10 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/server";
-import { createPaymentLinkAction } from "@/actions/payments";
-import { redirect } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, ShieldAlert } from "lucide-react";
+import { Icon } from "@iconify/react";
 import { PrintButton } from "@/components/ui/print-button";
+import { PayButton } from "@/components/ui/PayButton";
 
 interface InvoicePageProps {
   params: Promise<{ id: string }>;
@@ -25,7 +24,7 @@ export default async function PublicInvoicePage({ params }: InvoicePageProps) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6 bg-background">
         <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 text-center space-y-4 shadow-lg">
-          <ShieldAlert className="h-12 w-12 text-destructive mx-auto" />
+          <Icon icon="solar:shield-warning-broken" className="h-12 w-12 text-destructive mx-auto" />
           <h2 className="text-xl font-semibold text-foreground">Invoice Not Found</h2>
           <p className="text-sm text-muted-foreground">
             The requested invoice link is invalid, expired, or does not exist.
@@ -53,18 +52,6 @@ export default async function PublicInvoicePage({ params }: InvoicePageProps) {
     disputed: "destructive",
   };
 
-  const invoiceId = inv.id;
-  const invoiceCurrency = inv.currency;
-  const invoiceAmount = outstandingAmount;
-
-  // Server action to trigger payment redirection on form action
-  async function payInvoice() {
-    "use server";
-    const res = await createPaymentLinkAction(null, invoiceId, invoiceAmount, invoiceCurrency);
-    if (res.success && res.url) {
-      redirect(res.url);
-    }
-  }
 
   return (
     <div className="min-h-screen w-full bg-muted/20 py-12 px-4 sm:px-6 lg:px-8">
@@ -161,14 +148,7 @@ export default async function PublicInvoicePage({ params }: InvoicePageProps) {
             <PrintButton />
             
             {outstandingAmount > 0 && (
-              <form action={payInvoice} className="flex-1">
-                <button
-                  type="submit"
-                  className="w-full inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-medium text-primary-foreground hover:opacity-95 transition-all cursor-pointer shadow-md"
-                >
-                  <CreditCard className="h-4 w-4" /> Pay with Paystack
-                </button>
-              </form>
+              <PayButton invoiceId={inv.id} amount={outstandingAmount} currency={inv.currency} />
             )}
           </div>
         </div>

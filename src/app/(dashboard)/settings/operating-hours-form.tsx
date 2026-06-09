@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { Icon } from "@iconify/react";
 import { updateOperatingHoursAction } from "@/actions/business";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface OperatingHourRow {
   day_of_week: number;
@@ -16,30 +18,15 @@ interface OperatingHoursFormProps {
   isOwner: boolean;
 }
 
-const DAYS = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
-];
+const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export function OperatingHoursForm({ initialHours, isOwner }: OperatingHoursFormProps) {
-  // Ensure we have a row for every day of the week
   const getFullHours = (): OperatingHourRow[] => {
     const hoursMap = new Map(initialHours.map((h) => [h.day_of_week, h]));
     return Array.from({ length: 7 }, (_, i) => {
       const existing = hoursMap.get(i);
-      return (
-        existing ?? {
-          day_of_week: i,
-          open_time: "09:00",
-          close_time: "17:00",
-          is_closed: i === 0, // closed on Sunday by default
-        }
-      );
+      return existing ?? { day_of_week: i, open_time: "09:00", close_time: "17:00", is_closed: i === 0 };
     });
   };
 
@@ -55,7 +42,6 @@ export function OperatingHoursForm({ initialHours, isOwner }: OperatingHoursForm
           ? {
               ...h,
               is_closed: !h.is_closed,
-              // fill defaults if toggled open and times are empty
               open_time: h.is_closed ? h.open_time || "09:00" : h.open_time,
               close_time: h.is_closed ? h.close_time || "17:00" : h.close_time,
             }
@@ -64,15 +50,9 @@ export function OperatingHoursForm({ initialHours, isOwner }: OperatingHoursForm
     );
   };
 
-  const handleTimeChange = (
-    index: number,
-    field: "open_time" | "close_time",
-    value: string
-  ) => {
+  const handleTimeChange = (index: number, field: "open_time" | "close_time", value: string) => {
     if (!isOwner) return;
-    setHours((prev) =>
-      prev.map((h, i) => (i === index ? { ...h, [field]: value } : h))
-    );
+    setHours((prev) => prev.map((h, i) => (i === index ? { ...h, [field]: value } : h)));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -81,22 +61,15 @@ export function OperatingHoursForm({ initialHours, isOwner }: OperatingHoursForm
     setLoading(true);
     setStatus(null);
 
-    // Validate times are set if open
     for (const h of hours) {
       if (!h.is_closed) {
         if (!h.open_time || !h.close_time) {
-          setStatus({
-            success: false,
-            message: `Please specify open and close times for ${DAYS[h.day_of_week]}.`,
-          });
+          setStatus({ success: false, message: `Set open and close times for ${DAYS[h.day_of_week]}.` });
           setLoading(false);
           return;
         }
         if (h.open_time >= h.close_time) {
-          setStatus({
-            success: false,
-            message: `Open time must be before close time for ${DAYS[h.day_of_week]}.`,
-          });
+          setStatus({ success: false, message: `Open time must be before close time for ${DAYS[h.day_of_week]}.` });
           setLoading(false);
           return;
         }
@@ -105,97 +78,107 @@ export function OperatingHoursForm({ initialHours, isOwner }: OperatingHoursForm
 
     const res = await updateOperatingHoursAction(hours);
     setLoading(false);
-
-    if (res.success) {
-      setStatus({ success: true, message: "Operating hours saved successfully!" });
-    } else {
-      setStatus({ success: false, message: res.error });
-    }
+    setStatus(res.success
+      ? { success: true, message: "Operating hours saved!" }
+      : { success: false, message: res.error }
+    );
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-6">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">Operating Hours</h2>
-          <p className="text-sm text-muted-foreground">
-            Set your weekly working hours. Clients will only be able to book slots within these windows.
-          </p>
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
+        {/* Header */}
+        <div className="flex items-start gap-3 pb-4 border-b border-border/60">
+          <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+            <Icon icon="solar:clock-circle-broken" className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-foreground">Operating Hours</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Clients can only book within these windows.
+            </p>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          {hours.map((hour, index) => {
-            const dayName = DAYS[hour.day_of_week];
-
-            return (
-              <div
-                key={hour.day_of_week}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-3 border-b border-border/50 last:border-0"
-              >
-                <div className="flex items-center gap-4 w-40">
-                  <span className="text-sm font-medium text-foreground">{dayName}</span>
-                </div>
-
-                <div className="flex items-center gap-6 flex-1 justify-end">
-                  {!hour.is_closed ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="time"
-                        value={hour.open_time || "09:00"}
-                        onChange={(e) =>
-                          handleTimeChange(index, "open_time", e.target.value)
-                        }
-                        disabled={!isOwner}
-                        className="h-9 rounded-xl border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
-                      />
-                      <span className="text-xs text-muted-foreground">to</span>
-                      <input
-                        type="time"
-                        value={hour.close_time || "17:00"}
-                        onChange={(e) =>
-                          handleTimeChange(index, "close_time", e.target.value)
-                        }
-                        disabled={!isOwner}
-                        className="h-9 rounded-xl border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50"
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-sm text-muted-foreground italic mr-4">Closed for bookings</span>
-                  )}
-
-                  <label className="relative inline-flex items-center cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={!hour.is_closed}
-                      onChange={() => handleToggleClosed(index)}
-                      disabled={!isOwner}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-                    <span className="ml-3 text-sm font-medium text-foreground min-w-[50px]">
-                      {hour.is_closed ? "Closed" : "Open"}
-                    </span>
-                  </label>
-                </div>
+        {/* Days */}
+        <div className="space-y-1">
+          {hours.map((hour, index) => (
+            <div
+              key={hour.day_of_week}
+              className={cn(
+                "flex items-center justify-between gap-3 px-3 py-3 rounded-xl transition-colors",
+                hour.is_closed
+                  ? "bg-muted/40 text-muted-foreground"
+                  : "bg-primary/5 hover:bg-primary/8"
+              )}
+            >
+              {/* Day label */}
+              <div className="w-8 shrink-0 text-center">
+                <span className={cn(
+                  "text-[11px] font-bold uppercase tracking-wider",
+                  hour.is_closed ? "text-muted-foreground" : "text-primary"
+                )}>
+                  {DAY_SHORT[hour.day_of_week]}
+                </span>
               </div>
-            );
-          })}
+
+              {/* Times or closed label */}
+              <div className="flex-1 flex items-center gap-2 min-w-0">
+                {hour.is_closed ? (
+                  <span className="text-xs italic text-muted-foreground">Closed</span>
+                ) : (
+                  <>
+                    <input
+                      type="time"
+                      value={hour.open_time || "09:00"}
+                      onChange={(e) => handleTimeChange(index, "open_time", e.target.value)}
+                      disabled={!isOwner}
+                      className="h-8 rounded-lg border border-border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 w-26"
+                    />
+                    <span className="text-xs text-muted-foreground shrink-0">–</span>
+                    <input
+                      type="time"
+                      value={hour.close_time || "17:00"}
+                      onChange={(e) => handleTimeChange(index, "close_time", e.target.value)}
+                      disabled={!isOwner}
+                      className="h-8 rounded-lg border border-border bg-background px-2 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50 w-26"
+                    />
+                  </>
+                )}
+              </div>
+
+              {/* Toggle */}
+              <label className="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                <input
+                  type="checkbox"
+                  checked={!hour.is_closed}
+                  onChange={() => handleToggleClosed(index)}
+                  disabled={!isOwner}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-muted peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-border after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary" />
+              </label>
+            </div>
+          ))}
         </div>
       </div>
 
       {isOwner && (
-        <div className="flex justify-end gap-3">
+        <div className="flex items-center justify-end gap-3">
           {status && (
-            <p
-              className={`text-sm self-center ${
-                status.success ? "text-green-600 dark:text-green-400" : "text-destructive"
-              }`}
-            >
+            <div className={cn(
+              "flex items-center gap-2 text-sm",
+              status.success ? "text-green-600 dark:text-green-400" : "text-destructive"
+            )}>
+              <Icon
+                icon={status.success ? "solar:check-circle-broken" : "solar:close-circle-broken"}
+                className="w-4 h-4 shrink-0"
+              />
               {status.message}
-            </p>
+            </div>
           )}
           <Button type="submit" loading={loading}>
-            Save Operating Hours
+            Save Hours
           </Button>
         </div>
       )}

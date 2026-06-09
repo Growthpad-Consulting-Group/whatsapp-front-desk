@@ -4,23 +4,27 @@ import { useActionState } from "react";
 import { signupAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { GlassCard } from "@/components/ui/GlassCard";
 
 export function SignupForm() {
   const [state, dispatch, pending] = useActionState(signupAction, undefined);
 
   if (state?.success) {
     return (
-      <div className="rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 text-sm text-green-800 dark:text-green-300">
-        <p className="font-medium">Check your email</p>
-        <p className="mt-1">
-          We sent you a confirmation link. Click it to activate your account and
-          continue setup.
-        </p>
-      </div>
+      <GlassCard mode="light" gradient className="p-8 w-full max-w-sm">
+        <div className="rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 text-sm text-green-800 dark:text-green-300">
+          <p className="font-medium">Check your email</p>
+          <p className="mt-1">
+            We sent you a confirmation link. Click it to activate your account and
+            continue setup.
+          </p>
+        </div>
+      </GlassCard>
     );
   }
 
   return (
+    <GlassCard mode="light" gradient className="p-8 w-full max-w-sm">
     <form action={dispatch} className="space-y-4">
       <Input
         label="Your name"
@@ -57,5 +61,6 @@ export function SignupForm() {
         By signing up you agree to our terms of service and privacy policy.
       </p>
     </form>
+    </GlassCard>
   );
 }

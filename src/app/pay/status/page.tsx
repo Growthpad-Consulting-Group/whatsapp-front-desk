@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, XCircle, AlertTriangle, CalendarDays } from "lucide-react";
+import { Icon } from "@iconify/react";
 
 interface StatusPageProps {
   searchParams: Promise<{ status?: string }>;
@@ -16,25 +16,25 @@ export default async function PaymentStatusPage({ searchParams }: StatusPageProp
       title: "Payment Successful!",
       desc: "Your transaction has been processed. We have updated your booking confirmation and synchronized your staff's calendar.",
       colorClass: "text-green-500 bg-green-500/10 border-green-500/20",
-      icon: <CheckCircle2 className="h-16 w-16 text-green-500" />,
+      icon: <Icon icon="solar:check-circle-broken" className="h-16 w-16 text-green-500" />,
     },
     failed: {
       title: "Payment Failed",
       desc: "We could not complete your transaction. Please try opening the payment link again or use a different payment method.",
       colorClass: "text-red-500 bg-red-500/10 border-red-500/20",
-      icon: <XCircle className="h-16 w-16 text-red-500" />,
+      icon: <Icon icon="solar:close-circle-broken" className="h-16 w-16 text-red-500" />,
     },
     cancelled: {
       title: "Booking Expired",
       desc: "This appointment has been cancelled or timed out. Please trigger a new booking flow on WhatsApp to select a fresh time slot.",
       colorClass: "text-yellow-500 bg-yellow-500/10 border-yellow-500/20",
-      icon: <AlertTriangle className="h-16 w-16 text-yellow-500" />,
+      icon: <Icon icon="solar:danger-triangle-broken" className="h-16 w-16 text-yellow-500" />,
     },
     invalid: {
       title: "Invalid Payment Request",
       desc: "This payment link is invalid, expired, or has already been completed.",
       colorClass: "text-blue-500 bg-blue-500/10 border-blue-500/20",
-      icon: <CalendarDays className="h-16 w-16 text-blue-500" />,
+      icon: <Icon icon="solar:calendar-broken" className="h-16 w-16 text-blue-500" />,
     },
   };
 

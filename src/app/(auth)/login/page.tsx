@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { LoginForm } from "./login-form";
+import { LoginLeftPanel } from "./login-left-panel";
+import { LoginRightPanel } from "./login-right-panel";
+import { GradientOrb } from "@/components/ui/GradientOrb";
 
 export const metadata: Metadata = {
   title: "Sign in — WhatsApp Front Desk",
@@ -8,32 +9,15 @@ export const metadata: Metadata = {
 
 export default function LoginPage() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-muted px-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-primary mb-4">
-            <span className="text-primary-foreground text-xl">💬</span>
-          </div>
-          <h1 className="text-2xl font-semibold text-foreground">Welcome back</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Sign in to your WhatsApp Front Desk
-          </p>
-        </div>
-
-        <div className="bg-card border border-border rounded-2xl p-8 shadow-sm">
-          <LoginForm />
-
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/signup"
-              className="text-primary font-medium hover:underline"
-            >
-              Create one free
-            </Link>
-          </p>
-        </div>
+    <div className="relative flex flex-col md:flex-row min-h-screen overflow-hidden w-full bg-[#f0fdf4] dark:bg-[#020617]">
+      {/* Background gradient orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <GradientOrb className="top-[-10%] right-[-5%] w-[50vw] h-[50vw] bg-linear-to-br from-green-400/20 to-emerald-300/10 opacity-60" />
+        <GradientOrb className="bottom-[0%] left-[-10%] w-[40vw] h-[40vw] bg-linear-to-br from-green-200/20 to-teal-200/10 opacity-60" delay={5} />
       </div>
-    </main>
+
+      <LoginLeftPanel />
+      <LoginRightPanel />
+    </div>
   );
 }

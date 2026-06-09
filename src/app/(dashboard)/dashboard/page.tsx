@@ -3,6 +3,8 @@ import { requireBusiness, getTodayStats, getRecentMessages } from "@/lib/data/bu
 import { createClient } from "@/lib/supabase/server";
 import { DashboardClient } from "./dashboard-client";
 
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
 export const metadata: Metadata = {
   title: "Today — WhatsApp Front Desk",
 };
@@ -47,6 +49,61 @@ export default async function DashboardPage() {
     calendarConnected: (staffRes.data || []).some((s) => s.calendar_connected),
   };
 
+  // Chart data — weekly bookings (this week Mon-Sun)
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay()); // Sunday
+  weekStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  weekEnd.setHours(23, 59, 59, 999);
+
+  const { data: weekAppointments } = await supabase
+    .from("appointments")
+    .select("start_at, status")
+    .eq("business_id", business.id)
+    .gte("start_at", weekStart.toISOString())
+    .lte("start_at", weekEnd.toISOString());
+
+  const confirmedByDay = Array(7).fill(0);
+  const cancelledByDay = Array(7).fill(0);
+  (weekAppointments || []).forEach((a: any) => {
+    const day = new Date(a.start_at).getDay();
+    if (a.status === "cancelled") cancelledByDay[day]++;
+    else confirmedByDay[day]++;
+  });
+  const weeklyBookings = {
+    labels: DAY_LABELS,
+    confirmed: confirmedByDay,
+    cancelled: cancelledByDay,
+  };
+
+  // Chart data — revenue last 8 weeks from paid invoices
+  const eightWeeksAgo = new Date();
+  eightWeeksAgo.setDate(eightWeeksAgo.getDate() - 56);
+  const { data: paidInvoices } = await supabase
+    .from("invoices")
+    .select("amount, updated_at")
+    .eq("business_id", business.id)
+    .eq("status", "paid")
+    .gte("updated_at", eightWeeksAgo.toISOString());
+
+  const revenueByWeek: Record<number, number> = {};
+  (paidInvoices || []).forEach((inv: any) => {
+    const d = new Date(inv.updated_at);
+    const weekNum = Math.floor((Date.now() - d.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    const idx = 7 - weekNum;
+    if (idx >= 0 && idx < 8) revenueByWeek[idx] = (revenueByWeek[idx] || 0) + Number(inv.amount);
+  });
+  const revenueLabels = Array.from({ length: 8 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (7 - i) * 7);
+    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  });
+  const revenueData = {
+    labels: revenueLabels,
+    revenue: Array.from({ length: 8 }, (_, i) => revenueByWeek[i] || 0),
+  };
+
   return (
     <DashboardClient
       todayAppointments={todayAppointments}
@@ -57,6 +114,8 @@ export default async function DashboardPage() {
       cancelledCount={cancelledCount}
       onboardingSteps={onboardingSteps}
       business={business}
+      weeklyBookings={weeklyBookings}
+      revenueData={revenueData}
     />
   );
 }
