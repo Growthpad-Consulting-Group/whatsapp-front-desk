@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { requireBusiness } from "@/lib/data/business";
+import { createAuditLogAction } from "@/actions/audit";
 import type { ActionResult } from "@/types";
 
 export async function cancelBookingAction(appointmentId: string): Promise<ActionResult> {
@@ -48,6 +49,11 @@ export async function cancelBookingAction(appointmentId: string): Promise<Action
         console.error(`[Google Calendar] Failed to delete event on cancellation:`, err.message);
       }
     }
+
+    await createAuditLogAction("booking.cancelled", appointmentId, {
+      service: (appt.services as any)?.name,
+      cancelled_by: staff.name,
+    });
 
     revalidatePath("/bookings");
     return { success: true, data: undefined };
@@ -163,6 +169,11 @@ export async function rescheduleBookingAction(
         console.error(`[Google Calendar] Failed to sync rescheduled event:`, err.message);
       }
     }
+
+    await createAuditLogAction("booking.rescheduled", appointmentId, {
+      new_start_at: newStartAt,
+      new_staff_id: newStaffId,
+    });
 
     revalidatePath("/bookings");
     return { success: true, data: undefined };

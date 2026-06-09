@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "gen:types": "supabase gen types typescript --project-id kxdzlmqyyctnebucpbvz --schema public > src/types/database.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "seed:demo": "node scripts/seed-demo.mjs"
   },
   "dependencies": {
     "@iconify/react": "^6.0.2",

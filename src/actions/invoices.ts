@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { requireBusiness } from "@/lib/data/business";
+import { createAuditLogAction } from "@/actions/audit";
 import { whatsappClient } from "@/lib/whatsapp/client";
 import { formatCurrency } from "@/lib/utils";
 import type { ActionResult } from "@/types";
@@ -141,6 +142,12 @@ export async function sendInvoiceAction(invoiceId: string): Promise<ActionResult
       return { success: false, error: `Invoice status updated but WhatsApp alert failed: ${sendErr.message}` };
     }
 
+    await createAuditLogAction("invoice.sent", inv.id, {
+      invoice_number: inv.invoice_number,
+      amount: inv.amount,
+      customer: customer.name,
+    });
+
     revalidatePath("/invoices");
     return { success: true, data: undefined };
   } catch (err: any) {
@@ -192,6 +199,12 @@ export async function markInvoicePaymentAction(
         .update({ payment_status: "paid" })
         .eq("id", inv.appointment_id);
     }
+
+    await createAuditLogAction("invoice.payment_recorded", invoiceId, {
+      amount_recorded: amount,
+      new_status: paymentStatus === "paid" ? finalStatus : paymentStatus,
+      invoice_number: inv.invoice_number,
+    });
 
     revalidatePath("/invoices");
     revalidatePath("/bookings");

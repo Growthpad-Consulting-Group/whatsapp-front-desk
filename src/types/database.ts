@@ -175,8 +175,7 @@ export type Database = {
         Relationships: []
       }
       conversation_sessions: {
-        Row: {
-          business_id: string
+        Row: {          business_id: string
           context: Json
           customer_phone: string
           expires_at: string

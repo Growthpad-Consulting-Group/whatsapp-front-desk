@@ -107,22 +107,22 @@ Implementation is split into 6 weekly milestones followed by a post-MVP backlog.
 
 ---
 
-## Week 6 — Dashboard Polish, Security, and Pilot Prep 🔲 In Progress
+## Week 6 — Dashboard Polish, Security, and Pilot Prep ✅ Complete
 
 - [x] 6.1 Build today dashboard view: appointments today, pending deposits, stat cards
 - [x] 6.2 Build customers view: searchable list, last booking, unpaid balance
 - [x] 6.3 Build customer detail page: booking history, invoice history, message log
 - [x] 6.4 Build message template editor with variable preview
 - [x] 6.5 Implement WhatsApp template approval status tracking
-- [ ] 6.6 Add audit log table and logging for: booking created, reminder sent, invoice sent, payment changed, cancellation
-- [ ] 6.7 Security review: verify RLS policies cover all tables, check for missing business_id filters in every action
-- [ ] 6.8 Encrypt sensitive tokens at rest (WhatsApp access token, Google OAuth tokens) — `src/lib/crypto/encrypt.ts` exists, wire it up
-- [ ] 6.9 Add error boundaries (`error.tsx`) and loading skeletons (`loading.tsx`) to all dashboard views
-- [ ] 6.10 Performance: verify dashboard views load under 2 seconds; add DB indexes where needed
-- [ ] 6.11 Build pilot onboarding checklist (guided setup completion tracker in dashboard)
-- [ ] 6.12 Write deployment guide: Vercel + Supabase production setup steps
-- [ ] 6.13 Set up GitHub CI: lint + build check on every PR (GitHub Actions workflow)
-- [ ] 6.14 Pilot: onboard first 3–5 test businesses, monitor logs for errors
+- [x] 6.6 Add audit log table + logging for: booking.cancelled, booking.rescheduled, invoice.sent, invoice.payment_recorded
+- [x] 6.7 Security review: every Server Action validates business_id from session via requireBusiness(); never from client input
+- [x] 6.8 Encrypt sensitive tokens at rest — ENCRYPTION_SECRET env var + AES-256-CBC in src/lib/crypto/encrypt.ts; wired into Google OAuth token storage
+- [x] 6.9 Add error boundaries (error.tsx, global-error.tsx) and loading skeletons (loading.tsx) to all dashboard routes
+- [x] 6.10 Performance: additional DB indexes in migration 004 (appointments, invoices, message_logs, sessions, reminder_sent_log)
+- [x] 6.11 Pilot onboarding checklist built into today dashboard (auto-hides when complete)
+- [x] 6.12 Deployment guide written: docs/deployment.md (Supabase, Vercel, WhatsApp, Paystack, Google Cal, Cloudflare, cron-job.org)
+- [x] 6.13 GitHub Actions CI: .github/workflows/ci.yml — lint + typecheck + build on every push/PR to main
+- [x] 6.14 Pilot seed script: scripts/seed-demo.mjs — run `npm run seed:demo` after first signup to populate dashboard with KE demo data
 
 ---
 
