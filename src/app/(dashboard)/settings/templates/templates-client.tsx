@@ -77,9 +77,11 @@ export function TemplatesClient({ initialTemplates, business }: TemplatesClientP
   const [metaLoading, setMetaLoading] = useState(false);
 
   // Sync editor field when active template changes
-  useMemo(() => {
+  const [prevType, setPrevType] = useState(activeType);
+  if (activeType !== prevType) {
+    setPrevType(activeType);
     setEditorBody(activeTemplate.body);
-  }, [activeTemplate]);
+  }
 
   // Live variable translation engine
   const livePreview = useMemo(() => {
@@ -88,13 +90,13 @@ export function TemplatesClient({ initialTemplates, business }: TemplatesClientP
       business_name: business.name || "Apex Wellness",
       customer_name: "Sarah Jenkins",
       service_name: "Premium Aromatherapy Massage",
-      date: new Date().toLocaleDateString("en-GB"),
+      date: "09/06/2026",
       time: "10:30 AM",
       amount: "KES 3,500.00",
       payment_link: "https://checkout.paystack.co/demo_link",
       invoice_link: `${process.env.NEXT_PUBLIC_APP_URL}/invoice/demo_invoice_id`,
       invoice_number: "INV-01205",
-      due_date: new Date(Date.now() + 24 * 60 * 60 * 1000).toLocaleDateString("en-GB"),
+      due_date: "10/06/2026",
     };
 
     for (const [key, val] of Object.entries(dummyVals)) {

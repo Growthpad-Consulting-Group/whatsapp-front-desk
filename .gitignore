@@ -12,6 +12,8 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
 
 # next.js
 /.next/
@@ -23,6 +25,7 @@
 # misc
 .DS_Store
 *.pem
+.cursorignore
 
 # debug
 npm-debug.log*
@@ -40,8 +43,48 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# VS Code Local History
-.history/
+.history
 
-# env example is safe to commit; actual env files are excluded above
-!.env.local.example
+# Database - Keep migrations and scripts, ignore backups
+/database/*
+!/database/migrations/
+
+# Version file (generated during build)
+/VERSION
+!/database/scripts/
+!/database/README.md
+/database/migrations/*.backup
+/database/backups/
+/database/seeds/
+
+# Scripts - Organized by purpose
+/scripts/*
+!/scripts/migrations/
+!/scripts/utils/
+!/scripts/README.md
+/scripts/temp/
+scripts/node_modules/
+
+# Supabase
+/supabase
+
+# Other
+.cursorignore
+
+# Ignore backup files and old migration folders
+*.backup
+/migrations/
+/database-migrations/
+/sql/src/app/api-backup-needs-query-fix/**
+/backups/
+
+# Documentation website dependencies
+docs/website/node_modules/
+
+# Build logs
+build-output.log
+
+AGENTS.md
+.kiro
+# Sentry Config File
+.env.sentry-build-plugin

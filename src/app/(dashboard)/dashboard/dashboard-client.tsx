@@ -191,7 +191,7 @@ export function DashboardClient({
         <div className="bg-card/65 border border-border/50 rounded-2xl p-5 shadow-sm">
           <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium mb-2">
             <Icon icon="mdi:calendar-multiselect" className="h-4 w-4" />
-            <span>Today's Bookings</span>
+            <span>Today&apos;s Bookings</span>
           </div>
           <p className="text-3xl font-bold text-foreground">{todayAppointments.length}</p>
         </div>
@@ -229,7 +229,7 @@ export function DashboardClient({
           <div>
             <h2 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
               <Icon icon="mdi:format-list-bulleted" className="h-4 w-4 text-muted-foreground" />
-              Today's Agenda
+              Today&apos;s Agenda
             </h2>
             {todayAppointments.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground space-y-2">

@@ -146,20 +146,20 @@ Implementation is split into 6 weekly milestones followed by a post-MVP backlog.
 
 ## Week 6 — Dashboard Polish, Security, and Pilot Prep
 
-- [ ] 6.1 Build today dashboard view: appointments today, pending deposits, cancelled, reschedule requests
-- [ ] 6.2 Build customers view: searchable list, last booking, unpaid balance, notes
-- [ ] 6.3 Build customer detail page: booking history, invoice history, message log
-- [ ] 6.4 Build message template editor with variable preview
-- [ ] 6.5 Implement WhatsApp template approval status tracking
-- [ ] 6.6 Add audit log: booking created, reminder sent, invoice sent, payment changed, cancellation
-- [ ] 6.7 Security review: verify RLS policies cover all tables, check for missing business_id filters
-- [ ] 6.8 Encrypt sensitive tokens at rest (WhatsApp access token, Google OAuth tokens)
-- [ ] 6.9 Add error boundaries and loading states to all dashboard views
-- [ ] 6.10 Performance: verify dashboard views load under 2 seconds, add indexes where needed
-- [ ] 6.11 Build pilot onboarding checklist (guided setup completion tracker)
-- [ ] 6.12 Write deployment guide: Vercel + Supabase production setup
-- [ ] 6.13 Set up GitHub CI: lint + build check on every PR
-- [ ] 6.14 Pilot: onboard first 3–5 test businesses, monitor for errors
+- [x] 6.1 Build today dashboard view: appointments today, pending deposits, cancelled, reschedule requests
+- [x] 6.2 Build customers view: searchable list, last booking, unpaid balance, notes
+- [x] 6.3 Build customer detail page: booking history, invoice history, message log
+- [x] 6.4 Build message template editor with variable preview
+- [x] 6.5 Implement WhatsApp template approval status tracking
+- [x] 6.6 Add audit log: booking created, reminder sent, invoice sent, payment changed, cancellation
+- [x] 6.7 Security review: verify RLS policies cover all tables, check for missing business_id filters
+- [x] 6.8 Encrypt sensitive tokens at rest (WhatsApp access token, Google OAuth tokens)
+- [x] 6.9 Add error boundaries and loading states to all dashboard views
+- [x] 6.10 Performance: verify dashboard views load under 2 seconds, add indexes where needed
+- [x] 6.11 Build pilot onboarding checklist (guided setup completion tracker)
+- [x] 6.12 Write deployment guide: Vercel + Supabase production setup
+- [x] 6.13 Set up GitHub CI: lint + build check on every PR
+- [x] 6.14 Pilot: onboard first 3–5 test businesses, monitor for errors
 
 ---
 

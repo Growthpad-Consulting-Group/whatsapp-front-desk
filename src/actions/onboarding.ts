@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { BusinessProfileSchema } from "@/lib/validations/onboarding";
 import type { ActionResult } from "@/types";
 
@@ -23,6 +23,7 @@ export async function createBusinessAction(
   }
 
   const supabase = await createClient();
+  const adminSupabase = createAdminClient();
 
   // Get the current user
   const { data: { user }, error: userError } = await supabase.auth.getUser();
@@ -31,7 +32,7 @@ export async function createBusinessAction(
   }
 
   // Check if this user already has a business (prevent duplicate onboarding)
-  const { data: existing } = await supabase
+  const { data: existing } = await adminSupabase
     .from("staff_members")
     .select("business_id")
     .eq("user_id", user.id)
@@ -41,8 +42,8 @@ export async function createBusinessAction(
     redirect("/dashboard");
   }
 
-  // Create the business
-  const { data: business, error: bizError } = await supabase
+  // Create the business using the admin client
+  const { data: business, error: bizError } = await adminSupabase
     .from("businesses")
     .insert({
       name: parsed.data.name,
@@ -55,11 +56,12 @@ export async function createBusinessAction(
     .single();
 
   if (bizError || !business) {
+    console.error("[onboarding] failed to create business:", bizError);
     return { success: false, error: "Failed to create business. Please try again." };
   }
 
   // Create the owner staff member record linking auth user → business
-  const { error: staffError } = await supabase
+  const { error: staffError } = await adminSupabase
     .from("staff_members")
     .insert({
       business_id: business.id,
@@ -71,14 +73,15 @@ export async function createBusinessAction(
     });
 
   if (staffError) {
+    console.error("[onboarding] failed to create staff member:", staffError);
     // Roll back the business if staff insert fails
-    await supabase.from("businesses").delete().eq("id", business.id);
+    await adminSupabase.from("businesses").delete().eq("id", business.id);
     return { success: false, error: "Failed to complete setup. Please try again." };
   }
 
   // Seed default templates, reminder rules, and operating hours
   // Uses the service role via a Supabase RPC call
-  const { error: seedError } = await supabase.rpc("seed_business_defaults", {
+  const { error: seedError } = await adminSupabase.rpc("seed_business_defaults", {
     p_business_id: business.id,
   });
 
