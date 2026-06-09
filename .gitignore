@@ -65,8 +65,9 @@ next-env.d.ts
 /scripts/temp/
 scripts/node_modules/
 
-# Supabase
-/supabase
+# Supabase local dev files (keep migrations tracked)
+/supabase/.branches
+/supabase/.temp
 
 # Other
 .cursorignore
