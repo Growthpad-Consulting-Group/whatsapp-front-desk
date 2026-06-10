@@ -6,14 +6,14 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { Icon } from "@iconify/react";
 import { useTheme } from "next-themes";
-import { loginAction, magicLinkAction } from "@/actions/auth";
+import { loginAction, magicLinkAction, forgotPasswordAction } from "@/actions/auth";
 import { signupAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 type AuthMode = "login" | "signup";
-type LoginStep = "email" | "password" | "magic";
+type LoginStep = "email" | "password" | "magic" | "forgot";
 
 // ── Step indicator (dots + connecting line) ────────────────────────────────
 
@@ -136,9 +136,11 @@ function EmailStep({
 function PasswordStep({
   email,
   onBack,
+  onForgot,
 }: {
   email: string;
   onBack: () => void;
+  onForgot: () => void;
 }) {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
@@ -215,7 +217,7 @@ function PasswordStep({
             </div>
             <span className="text-sm text-muted-foreground">Keep me signed in</span>
           </label>
-          <button type="button" className="text-sm font-bold text-primary hover:underline">
+          <button type="button" onClick={onForgot} className="text-sm font-bold text-primary hover:underline">
             Forgot?
           </button>
         </div>
@@ -272,6 +274,59 @@ function MagicStep({ onBack }: { onBack: () => void }) {
           )}
           <Button type="submit" className="w-full" loading={magicPending}>
             Send sign-in link
+          </Button>
+        </form>
+      )}
+      <button type="button" onClick={onBack} className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors">
+        ← Back to sign in
+      </button>
+    </motion.div>
+  );
+}
+
+// ── Forgot password step ────────────────────────────────────────────────────
+
+function ForgotStep({ email, onBack }: { email: string; onBack: () => void }) {
+  const [state, dispatch, pending] = useActionState(forgotPasswordAction, undefined);
+
+  return (
+    <motion.div
+      className="space-y-4"
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -24 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+    >
+      {state?.success ? (
+        <div className="rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 text-sm text-green-800 dark:text-green-300">
+          <p className="font-semibold mb-0.5">Check your email</p>
+          We sent a reset link to <strong>{email}</strong>. It expires in 10 minutes.
+        </div>
+      ) : (
+        <form action={dispatch} className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Enter your email and we&apos;ll send a link to reset your password.
+          </p>
+          <div className="relative">
+            <Icon icon="solar:letter-broken" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="email"
+              name="email"
+              defaultValue={email}
+              placeholder="you@example.com"
+              required
+              autoFocus
+              className="h-11 w-full pl-10 pr-4 rounded-xl border border-border bg-background text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+          </div>
+          {state?.success === false && (
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+              <Icon icon="solar:danger-circle-broken" className="w-4 h-4 shrink-0" />
+              {state.error}
+            </div>
+          )}
+          <Button type="submit" className="w-full" loading={pending}>
+            Send reset link
           </Button>
         </form>
       )}
@@ -409,21 +464,25 @@ export function LoginLeftPanel() {
           >
             <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-1">
               {isLogin
-                ? loginStep === "email" ? "Welcome back" : "Enter your password"
+                ? loginStep === "email" ? "Welcome back"
+                  : loginStep === "forgot" ? "Reset your password"
+                  : "Enter your password"
                 : "Get started free"}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
               {isLogin
                 ? loginStep === "email"
                   ? "Sign in to your WhatsApp Front Desk"
+                  : loginStep === "forgot"
+                  ? "We'll email you a secure reset link"
                   : `Signing in as ${email}`
                 : "Set up your front desk in under 2 minutes"}
             </p>
           </motion.div>
         </AnimatePresence>
 
-        {/* Step indicator — only for login */}
-        {isLogin && loginStep !== "magic" && (
+        {/* Step indicator — only for login email/password steps */}
+        {isLogin && loginStep !== "magic" && loginStep !== "forgot" && (
           <StepIndicator currentStep={loginStep} />
         )}
 
@@ -444,6 +503,14 @@ export function LoginLeftPanel() {
                 key="password"
                 email={email}
                 onBack={() => setLoginStep("email")}
+                onForgot={() => setLoginStep("forgot")}
+              />
+            )}
+            {isLogin && loginStep === "forgot" && (
+              <ForgotStep
+                key="forgot"
+                email={email}
+                onBack={() => setLoginStep("password")}
               />
             )}
             {isLogin && loginStep === "magic" && (

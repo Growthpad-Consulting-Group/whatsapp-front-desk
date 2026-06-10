@@ -101,6 +101,46 @@ export async function magicLinkAction(
   return { success: true, data: undefined };
 }
 
+export async function forgotPasswordAction(
+  _prev: ActionResult | undefined,
+  formData: FormData
+): Promise<ActionResult> {
+  const email = formData.get("email");
+  if (!email || typeof email !== "string" || !email.includes("@")) {
+    return { success: false, error: "Enter a valid email address." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password`,
+  });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  return { success: true, data: undefined };
+}
+
+export async function updatePasswordAction(
+  _prev: ActionResult | undefined,
+  formData: FormData
+): Promise<ActionResult> {
+  const password = formData.get("password");
+  if (!password || typeof password !== "string" || password.length < 8) {
+    return { success: false, error: "Password must be at least 8 characters." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { success: false, error: error.message };
+  }
+
+  redirect("/dashboard");
+}
+
 export async function logoutAction(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
