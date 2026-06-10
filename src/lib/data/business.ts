@@ -50,7 +50,7 @@ export async function getTodayStats(businessId: string) {
       // Appointments today (confirmed + pending)
       supabase
         .from("appointments")
-        .select("id, status, start_at, end_at, payment_status, customers(name, phone), services(name)")
+        .select("id, status, start_at, end_at, payment_status, customers(name, phone), services(name), staff_members(name)")
         .eq("business_id", businessId)
         .gte("start_at", todayStart.toISOString())
         .lte("start_at", todayEnd.toISOString())

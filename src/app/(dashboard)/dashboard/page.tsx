@@ -109,7 +109,7 @@ export default async function DashboardPage() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const { data: heatmapAppointments } = await supabase
     .from("appointments")
-    .select("start_at, status")
+    .select("id, start_at, status, customers(name, phone), services(name), staff_members(name)")
     .eq("business_id", business.id)
     .gte("start_at", thirtyDaysAgo.toISOString());
 

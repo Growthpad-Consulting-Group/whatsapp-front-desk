@@ -21,6 +21,8 @@ import {
   toggleInvoiceRemindersPausedAction,
 } from "@/actions/invoices";
 import { Icon } from "@iconify/react";
+import { Badge } from "@/components/ui/badge";
+import { FormError } from "@/components/ui/form-error";
 import type { Business } from "@/types";
 
 const STATUS_TABS = [
@@ -101,6 +103,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
 
   const [sendingInvoiceId, setSendingInvoiceId] = useState<string | null>(null);
   const [togglingPauseId, setTogglingPauseId] = useState<string | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
 
   const metrics = useMemo(() => {
     let outstanding = 0, collected = 0, overdue = 0;
@@ -320,7 +323,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
 
                 {/* Primary actions */}
                 <div className="flex gap-2 border-t border-border/50 pt-4 mt-4 text-xs">
-                  <Button variant="ghost" size="sm" onClick={() => window.open(`/invoice/${inv.id}`, "_blank")} className="flex-1 flex items-center justify-center gap-1 border border-border hover:bg-muted">
+                  <Button variant="ghost" size="sm" onClick={() => setViewingInvoice(inv)} className="flex-1 flex items-center justify-center gap-1 border border-border hover:bg-muted">
                     <Icon icon="solar:eye-broken" className="h-3.5 w-3.5" /> View
                   </Button>
                   {outstanding > 0 && inv.status !== "cancelled" && (
@@ -365,6 +368,144 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
         </div>
       )}
 
+      {/* Invoice preview modal */}
+      <SimpleModal
+        isOpen={!!viewingInvoice}
+        onClose={() => setViewingInvoice(null)}
+        width="max-w-2xl"
+        noPadding
+        icon="solar:document-text-broken"
+        title={viewingInvoice ? viewingInvoice.invoice_number : "Invoice"}
+        subtitle={viewingInvoice?.customers?.name ?? undefined}
+        rightElement={
+          viewingInvoice ? (
+            <a
+              href={`/invoice/${viewingInvoice.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs font-semibold text-primary hover:underline"
+            >
+              <Icon icon="solar:square-top-down-broken" className="h-3.5 w-3.5" />
+              Open full page
+            </a>
+          ) : undefined
+        }
+      >
+        {viewingInvoice && (() => {
+          const inv = viewingInvoice;
+          const customer = inv.customers;
+          const outstanding = Number(inv.amount) - Number(inv.amount_paid);
+          return (
+            <div className="divide-y divide-border/50">
+              {/* Banner */}
+              <div className="bg-primary/5 px-6 py-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">{business.name}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Receipt &amp; Payment Desk</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <StatusPill status={inv.status} context="invoice" size="md" />
+                </div>
+              </div>
+
+              {/* Metadata */}
+              <div className="grid grid-cols-2 gap-6 px-6 py-5 text-sm">
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Billed To</p>
+                  <p className="font-semibold text-foreground">{customer?.name ?? "Offline Client"}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{customer?.phone ?? "—"}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Details</p>
+                  <p className="text-xs text-muted-foreground">Due: <span className="font-medium text-foreground">{inv.due_date}</span></p>
+                  {inv.promise_date && (
+                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-0.5">
+                      Promised: <span className="font-medium">{inv.promise_date}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Line items */}
+              <div className="px-6 py-5 space-y-3">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Items</p>
+                <div className="border border-border/50 rounded-xl overflow-hidden">
+                  <div className="bg-muted/30 grid grid-cols-3 px-4 py-2.5 text-xs font-semibold text-muted-foreground border-b border-border/40">
+                    <span className="col-span-2">Description</span>
+                    <span className="text-right">Amount</span>
+                  </div>
+                  <div className="grid grid-cols-3 px-4 py-3 text-sm">
+                    <div className="col-span-2">
+                      <p className="font-medium text-foreground">
+                        {inv.notes || "Appointment Service Fee"}
+                      </p>
+                    </div>
+                    <span className="text-right font-medium text-foreground self-center">
+                      {formatCurrency(Number(inv.amount), inv.currency)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="px-6 py-5">
+                <div className="ml-auto w-full sm:w-64 space-y-2 text-sm">
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span>{formatCurrency(Number(inv.amount), inv.currency)}</span>
+                  </div>
+                  {Number(inv.amount_paid) > 0 && (
+                    <div className="flex justify-between text-green-600 dark:text-green-400">
+                      <span>Already Paid</span>
+                      <span>−{formatCurrency(Number(inv.amount_paid), inv.currency)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-base border-t border-border/50 pt-2 text-foreground">
+                    <span>Total Due</span>
+                    <span>{formatCurrency(outstanding, inv.currency)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="px-6 py-4 flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5"
+                >
+                  <Icon icon="solar:printer-minimalistic-broken" className="h-4 w-4" />
+                  Print
+                </Button>
+                {outstanding > 0 && inv.status !== "cancelled" && (
+                  <Button
+                    size="sm"
+                    loading={sendingInvoiceId === inv.id}
+                    onClick={async () => {
+                      setSendingInvoiceId(inv.id);
+                      const res = await sendInvoiceAction(inv.id);
+                      setSendingInvoiceId(null);
+                      if (res.success) {
+                        setInvoices((prev) => prev.map((i) => i.id === inv.id ? { ...i, status: "sent" } : i));
+                        setViewingInvoice((prev) => prev ? { ...prev, status: "sent" } : prev);
+                        toast.success("Invoice sent to customer.");
+                      } else {
+                        toast.error("Failed to send invoice.");
+                      }
+                    }}
+                    className="flex items-center gap-1.5"
+                  >
+                    <Icon icon="solar:plain-2-broken" className="h-4 w-4" />
+                    Send to Customer
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })()}
+      </SimpleModal>
+
       {/* Create invoice modal */}
       <SimpleModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create Manual Invoice" subtitle="Generate a billing invoice for an offline client." width="max-w-xl">
         <form onSubmit={handleCreateInvoiceSubmit} className="space-y-4">
@@ -391,11 +532,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
             <textarea id="notes" rows={3} placeholder="Hair cutting and hair coloring treatments…" value={newNotes} onChange={(e) => setNewNotes(e.target.value)}
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
-          {createError && (
-            <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3">
-              <Icon icon="solar:danger-circle-broken" className="h-4 w-4 shrink-0" />{createError}
-            </div>
-          )}
+          {createError && <FormError message={createError} />}
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => setIsCreateOpen(false)} disabled={createLoading}>Cancel</Button>
             <Button type="submit" loading={createLoading}>Create Draft</Button>
@@ -440,11 +577,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
             <textarea id="p_notes" rows={2} placeholder="Customer paid via cash…" value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)}
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
-          {recordError && (
-            <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3">
-              <Icon icon="solar:danger-circle-broken" className="h-4 w-4 shrink-0" />{recordError}
-            </div>
-          )}
+          {recordError && <FormError message={recordError} />}
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => setRecordingInvoice(null)} disabled={recordLoading}>Cancel</Button>
             <Button type="submit" loading={recordLoading}>Record Payment</Button>

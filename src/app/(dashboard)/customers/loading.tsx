@@ -1,10 +1,13 @@
-import { Icon } from "@iconify/react";
-
 export default function CustomersLoading() {
   return (
-    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-3">
-      <Icon icon="mdi:loading" className="h-10 w-10 text-primary animate-spin" />
-      <p className="text-xs text-muted-foreground font-semibold">Loading CRM customer directory...</p>
+    <div className="space-y-6 animate-pulse">
+      <div className="h-28 bg-muted rounded-2xl" />
+      <div className="h-16 bg-muted rounded-2xl" />
+      <div className="space-y-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-14 bg-muted rounded-xl" />
+        ))}
+      </div>
     </div>
   );
 }

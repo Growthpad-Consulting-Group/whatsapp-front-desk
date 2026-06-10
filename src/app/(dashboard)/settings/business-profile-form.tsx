@@ -53,36 +53,20 @@ function SaveRow({ pending, disabled }: { pending: boolean; disabled: boolean })
   );
 }
 
-// ─── Select wrapper to match Input styling ────────────────────────────────────
+// ─── Local select wrapper (matches Input styling, scoped to this form) ────────
 
 function Select({
-  id,
-  name,
-  label,
-  disabled,
-  required,
-  defaultValue,
-  children,
+  id, name, label, disabled, required, defaultValue, children,
 }: {
-  id: string;
-  name: string;
-  label: string;
-  disabled?: boolean;
-  required?: boolean;
-  defaultValue?: string;
+  id: string; name: string; label: string;
+  disabled?: boolean; required?: boolean; defaultValue?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-foreground">
-        {label}
-      </label>
+      <label htmlFor={id} className="text-sm font-medium text-foreground">{label}</label>
       <select
-        id={id}
-        name={name}
-        disabled={disabled}
-        required={required}
-        defaultValue={defaultValue}
+        id={id} name={name} disabled={disabled} required={required} defaultValue={defaultValue}
         className="h-10 w-full rounded-xl border border-border/80 bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-border/100 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {children}
