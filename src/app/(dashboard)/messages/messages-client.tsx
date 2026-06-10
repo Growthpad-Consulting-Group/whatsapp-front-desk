@@ -44,16 +44,18 @@ export function MessagesClient({
   const [handoffs, setHandoffs] = useState<HandoffSession[]>(initialHandoffs);
   const [logs, setLogs] = useState<MessageLogItem[]>(initialLogs);
   const [releasingId, setReleasingId] = useState<string | null>(null);
+  const [releaseError, setReleaseError] = useState<string | null>(null);
 
   const handleRelease = async (phone: string, id: string) => {
     setReleasingId(id);
+    setReleaseError(null);
     const res = await releaseHandoffAction(phone);
     setReleasingId(null);
 
     if (res.success) {
       setHandoffs((prev) => prev.filter((h) => h.id !== id));
     } else {
-      alert(res.error);
+      setReleaseError(res.error ?? "Failed to release session.");
     }
   };
 
@@ -92,6 +94,13 @@ export function MessagesClient({
             Conversations flagged for manual agent intervention.
           </p>
         </div>
+
+        {releaseError && (
+          <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3">
+            <Icon icon="solar:danger-circle-broken" className="h-4 w-4 shrink-0" />
+            {releaseError}
+          </div>
+        )}
 
         {handoffs.length === 0 ? (
           <div className="text-center py-8 bg-muted/30 border border-border/80 border-dashed rounded-xl">
@@ -134,7 +143,7 @@ export function MessagesClient({
       </div>
 
       {/* Message Activity Log (Right column) */}
-      <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col min-h-[500px]">
+      <div className="lg:col-span-2 bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col min-h-125">
         <div>
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Icon icon="solar:chat-square-broken" className="h-4 w-4 text-muted-foreground" />
@@ -152,7 +161,7 @@ export function MessagesClient({
             description="Messages will populate here as clients interact with WhatsApp."
           />
         ) : (
-          <div className="space-y-4 flex-1 overflow-y-auto max-h-[600px] pr-2">
+          <div className="space-y-4 flex-1 overflow-y-auto max-h-150 pr-2">
             {logs.map((log) => {
               const isInbound = log.direction === "inbound";
               const clientName = log.customers?.name || log.customers?.phone || "Client";

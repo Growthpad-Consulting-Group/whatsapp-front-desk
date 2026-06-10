@@ -10,7 +10,13 @@ import EmptyState from "@/components/ui/EmptyState";
 import StatusPill from "@/components/ui/StatusPill";
 import { Tabs } from "@/components/ui/Tabs";
 import { SimpleModal } from "@/components/common/SimpleModal";
-import { sendInvoiceAction, markInvoicePaymentAction, createManualInvoiceAction } from "@/actions/invoices";
+import {
+  sendInvoiceAction,
+  markInvoicePaymentAction,
+  createManualInvoiceAction,
+  setInvoicePromiseDateAction,
+  toggleInvoiceRemindersPausedAction,
+} from "@/actions/invoices";
 import { Icon } from "@iconify/react";
 import type { Business } from "@/types";
 
@@ -23,16 +29,47 @@ const STATUS_TABS = [
   { key: "overdue", label: "Overdue" },
 ];
 
+interface InvoiceCustomer {
+  id: string;
+  name: string;
+  phone: string;
+}
+
+interface Invoice {
+  id: string;
+  invoice_number: string;
+  amount: number;
+  amount_paid: number;
+  currency: string;
+  due_date: string;
+  status: string;
+  notes: string | null;
+  promise_date: string | null;
+  reminders_paused: boolean;
+  customers: InvoiceCustomer | null;
+}
+
+interface CustomerOption {
+  id: string;
+  name: string;
+  phone: string;
+}
+
+interface ServiceOption {
+  id: string;
+  name: string;
+  price: number;
+}
+
 interface InvoicesClientProps {
-  initialInvoices: any[];
-  customers: any[];
-  services?: any[];
+  initialInvoices: Invoice[];
+  customers: CustomerOption[];
+  services: ServiceOption[];
   business: Business;
 }
 
-export function InvoicesClient({ initialInvoices, customers, business }: InvoicesClientProps) {
-  const [invoices, setInvoices] = useState<any[]>(initialInvoices);
-
+export function InvoicesClient({ initialInvoices, customers, business }: Omit<InvoicesClientProps, "services"> & { services?: ServiceOption[] }) {
+  const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
 
@@ -46,14 +83,20 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
   const [createError, setCreateError] = useState<string | null>(null);
 
   // Record payment modal
-  const [recordingInvoice, setRecordingInvoice] = useState<any | null>(null);
+  const [recordingInvoice, setRecordingInvoice] = useState<Invoice | null>(null);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentStatus, setPaymentStatus] = useState("paid");
   const [paymentNotes, setPaymentNotes] = useState("");
   const [recordLoading, setRecordLoading] = useState(false);
   const [recordError, setRecordError] = useState<string | null>(null);
 
+  // Promise-to-pay modal
+  const [promiseInvoice, setPromiseInvoice] = useState<Invoice | null>(null);
+  const [promiseDate, setPromiseDate] = useState("");
+  const [promiseLoading, setPromiseLoading] = useState(false);
+
   const [sendingInvoiceId, setSendingInvoiceId] = useState<string | null>(null);
+  const [togglingPauseId, setTogglingPauseId] = useState<string | null>(null);
 
   const metrics = useMemo(() => {
     let outstanding = 0, collected = 0, overdue = 0;
@@ -67,11 +110,11 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
   }, [invoices]);
 
   const filteredInvoices = useMemo(() => invoices.filter((inv) => {
-    const customer = inv.customers || {};
+    const customer = inv.customers;
     const matchesSearch = !searchTerm ||
       inv.invoice_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone?.includes(searchTerm);
+      customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer?.phone?.includes(searchTerm);
     const matchesStatus = selectedStatus === "all" || inv.status === selectedStatus;
     return matchesSearch && matchesStatus;
   }), [invoices, searchTerm, selectedStatus]);
@@ -86,11 +129,33 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
     const res = await sendInvoiceAction(invoiceId);
     setSendingInvoiceId(null);
     if (res.success) {
-      setInvoices((prev) => prev.map((inv) => (inv.id === invoiceId ? { ...inv, status: "sent" } : inv)));
+      setInvoices((prev) => prev.map((inv) => inv.id === invoiceId ? { ...inv, status: "sent" } : inv));
     }
   };
 
-  const handleCreateInvoiceSubmit = async (e: React.FormEvent) => {
+  const handleTogglePause = async (inv: Invoice) => {
+    setTogglingPauseId(inv.id);
+    const res = await toggleInvoiceRemindersPausedAction(inv.id, !inv.reminders_paused);
+    setTogglingPauseId(null);
+    if (res.success) {
+      setInvoices((prev) => prev.map((i) => i.id === inv.id ? { ...i, reminders_paused: !inv.reminders_paused } : i));
+    }
+  };
+
+  const handleSetPromiseDate = async (e: React.SyntheticEvent) => {
+    e.preventDefault();
+    if (!promiseInvoice) return;
+    setPromiseLoading(true);
+    const res = await setInvoicePromiseDateAction(promiseInvoice.id, promiseDate || null);
+    setPromiseLoading(false);
+    if (res.success) {
+      setInvoices((prev) => prev.map((i) => i.id === promiseInvoice.id ? { ...i, promise_date: promiseDate || null } : i));
+      setPromiseInvoice(null);
+      setPromiseDate("");
+    }
+  };
+
+  const handleCreateInvoiceSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!newCustomerId || !newAmount || !newDueDate) {
       setCreateError("Please fill out all required fields.");
@@ -98,18 +163,19 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
     }
     setCreateLoading(true);
     setCreateError(null);
-    const res = (await createManualInvoiceAction(newCustomerId, Number(newAmount), newDueDate, newNotes || undefined)) as any;
+    const res = await createManualInvoiceAction(newCustomerId, Number(newAmount), newDueDate, newNotes || undefined);
     setCreateLoading(false);
     if (res.success && res.data) {
-      setInvoices((prev) => [{ ...res.data, customers: customers.find((c) => c.id === newCustomerId) || null }, ...prev]);
+      const customer = customers.find((c) => c.id === newCustomerId) ?? null;
+      setInvoices((prev) => [{ ...res.data, customers: customer, promise_date: null, reminders_paused: false }, ...prev]);
       setIsCreateOpen(false);
       setNewCustomerId(""); setNewAmount(""); setNewDueDate(""); setNewNotes("");
     } else {
-      setCreateError(res.error || "Failed to create invoice.");
+      setCreateError(res.error ?? "Failed to create invoice.");
     }
   };
 
-  const handleRecordPaymentSubmit = async (e: React.FormEvent) => {
+  const handleRecordPaymentSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!recordingInvoice || !paymentAmount) return;
     setRecordLoading(true);
@@ -127,7 +193,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
       setRecordingInvoice(null);
       setPaymentAmount(""); setPaymentNotes("");
     } else {
-      setRecordError(res.error || "Failed to record payment.");
+      setRecordError(res.error ?? "Failed to record payment.");
     }
   };
 
@@ -141,11 +207,10 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
         actions={[{ label: "Create Invoice", icon: "solar:add-circle-broken", variant: "primary", onClick: () => setIsCreateOpen(true) }]}
       />
 
-      {/* Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <AnimatedMetricCard title="Collected Revenue" value={formatCurrency(metrics.collected, business.currency)} icon="solar:graph-up-broken" color="green" variant="card" mode="light" />
-        <AnimatedMetricCard title="Total Outstanding" value={formatCurrency(metrics.outstanding, business.currency)} icon="solar:document-text-broken" color="orange" variant="card" mode="light" />
-        <AnimatedMetricCard title="Overdue Balance" value={formatCurrency(metrics.overdue, business.currency)} icon="solar:danger-triangle-broken" color="red" variant="card" mode="light" />
+        <AnimatedMetricCard title="Collected Revenue" value={formatCurrency(metrics.collected, business.currency)} icon="solar:graph-up-broken" color="green" variant="card" />
+        <AnimatedMetricCard title="Total Outstanding" value={formatCurrency(metrics.outstanding, business.currency)} icon="solar:document-text-broken" color="orange" variant="card" />
+        <AnimatedMetricCard title="Overdue Balance" value={formatCurrency(metrics.overdue, business.currency)} icon="solar:danger-triangle-broken" color="red" variant="card" />
       </div>
 
       {/* Control bar */}
@@ -181,7 +246,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredInvoices.map((inv) => {
-            const customer = inv.customers || {};
+            const customer = inv.customers;
             const outstanding = Number(inv.amount) - Number(inv.amount_paid);
             return (
               <div key={inv.id} className="group relative overflow-hidden bg-card/65 backdrop-blur-md border border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all duration-200 flex flex-col justify-between">
@@ -189,14 +254,27 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
                   <div className="flex justify-between items-start gap-2">
                     <div>
                       <span className="text-xs font-semibold text-muted-foreground font-mono block">{inv.invoice_number}</span>
-                      <h4 className="font-semibold text-foreground mt-1 text-sm">{customer.name || "Offline Client"}</h4>
+                      <h4 className="font-semibold text-foreground mt-1 text-sm">{customer?.name ?? "Offline Client"}</h4>
                     </div>
-                    <StatusPill status={inv.status} context="invoice" variant="default" />
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {inv.reminders_paused && (
+                        <span title="Reminders paused">
+                          <Icon icon="solar:bell-off-broken" className="h-4 w-4 text-muted-foreground" />
+                        </span>
+                      )}
+                      <StatusPill status={inv.status} context="invoice" variant="default" />
+                    </div>
                   </div>
 
                   <div className="text-xs text-muted-foreground space-y-1.5 bg-background/40 border border-border/30 rounded-xl p-3">
                     <p className="flex justify-between"><span>Due Date</span><span className="font-medium text-foreground">{inv.due_date}</span></p>
-                    <p className="flex justify-between"><span>Customer Phone</span><span className="font-medium text-foreground">{customer.phone || "N/A"}</span></p>
+                    <p className="flex justify-between"><span>Customer Phone</span><span className="font-medium text-foreground">{customer?.phone ?? "N/A"}</span></p>
+                    {inv.promise_date && (
+                      <p className="flex justify-between text-amber-600 dark:text-amber-400">
+                        <span>Promised</span>
+                        <span className="font-medium">{inv.promise_date}</span>
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1 border-t border-border/40 pt-3">
@@ -212,6 +290,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
                   </div>
                 </div>
 
+                {/* Primary actions */}
                 <div className="flex gap-2 border-t border-border/50 pt-4 mt-4 text-xs">
                   <Button variant="ghost" size="sm" onClick={() => window.open(`/invoice/${inv.id}`, "_blank")} className="flex-1 flex items-center justify-center gap-1 border border-border hover:bg-muted">
                     <Icon icon="solar:eye-broken" className="h-3.5 w-3.5" /> View
@@ -227,6 +306,31 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
                     </>
                   )}
                 </div>
+
+                {/* Collections controls — only on unpaid/overdue */}
+                {outstanding > 0 && !["cancelled", "paid", "draft"].includes(inv.status) && (
+                  <div className="flex gap-2 pt-2 mt-1 text-xs">
+                    <button
+                      onClick={() => { setPromiseInvoice(inv); setPromiseDate(inv.promise_date ?? ""); }}
+                      className="flex-1 flex items-center justify-center gap-1 h-7 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-[11px] font-medium"
+                    >
+                      <Icon icon="solar:calendar-mark-broken" className="h-3 w-3" />
+                      {inv.promise_date ? `Promised ${inv.promise_date}` : "Set Promise"}
+                    </button>
+                    <button
+                      onClick={() => handleTogglePause(inv)}
+                      disabled={togglingPauseId === inv.id}
+                      className={`flex-1 flex items-center justify-center gap-1 h-7 rounded-lg border transition-colors text-[11px] font-medium ${
+                        inv.reminders_paused
+                          ? "border-amber-400/50 bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/40"
+                          : "border-border text-muted-foreground hover:text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      <Icon icon={inv.reminders_paused ? "solar:bell-off-broken" : "solar:bell-broken"} className="h-3 w-3" />
+                      {inv.reminders_paused ? "Paused" : "Pause"}
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -234,13 +338,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
       )}
 
       {/* Create invoice modal */}
-      <SimpleModal
-        isOpen={isCreateOpen}
-        onClose={() => setIsCreateOpen(false)}
-        title="Create Manual Invoice"
-        subtitle="Generate a billing invoice for an offline client."
-        width="max-w-2xl"
-      >
+      <SimpleModal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Create Manual Invoice" subtitle="Generate a billing invoice for an offline client." width="max-w-xl">
         <form onSubmit={handleCreateInvoiceSubmit} className="space-y-4">
           <div className="flex flex-col gap-1.5">
             <label htmlFor="customer" className="text-xs font-semibold text-foreground">Select Customer *</label>
@@ -250,7 +348,6 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>)}
             </select>
           </div>
-
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="amount" className="text-xs font-semibold text-foreground">Amount ({business.currency}) *</label>
@@ -262,19 +359,16 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
                 className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
             </div>
           </div>
-
           <div className="flex flex-col gap-1.5">
             <label htmlFor="notes" className="text-xs font-semibold text-foreground">Notes / Invoice items</label>
             <textarea id="notes" rows={3} placeholder="Hair cutting and hair coloring treatments…" value={newNotes} onChange={(e) => setNewNotes(e.target.value)}
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
-
           {createError && (
             <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3">
-              <Icon icon="solar:danger-circle-broken" className="h-4 w-4 shrink-0" /><span>{createError}</span>
+              <Icon icon="solar:danger-circle-broken" className="h-4 w-4 shrink-0" />{createError}
             </div>
           )}
-
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => setIsCreateOpen(false)} disabled={createLoading}>Cancel</Button>
             <Button type="submit" loading={createLoading}>Create Draft</Button>
@@ -283,13 +377,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
       </SimpleModal>
 
       {/* Record payment modal */}
-      <SimpleModal
-        isOpen={!!recordingInvoice}
-        onClose={() => setRecordingInvoice(null)}
-        title="Record Payment"
-        subtitle={recordingInvoice ? `Recording receipt for ${recordingInvoice.invoice_number}` : undefined}
-        width="max-w-md"
-      >
+      <SimpleModal isOpen={!!recordingInvoice} onClose={() => setRecordingInvoice(null)} title="Record Payment" subtitle={recordingInvoice ? `Receipt for ${recordingInvoice.invoice_number}` : undefined} width="max-w-md">
         <form onSubmit={handleRecordPaymentSubmit} className="space-y-4">
           {recordingInvoice && (
             <div className="bg-muted/40 border border-border/30 rounded-xl p-3 text-xs space-y-1.5">
@@ -305,7 +393,6 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
               </div>
             </div>
           )}
-
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="p_amount" className="text-xs font-semibold text-foreground">Received Amount *</label>
@@ -321,22 +408,47 @@ export function InvoicesClient({ initialInvoices, customers, business }: Invoice
               </select>
             </div>
           </div>
-
           <div className="flex flex-col gap-1.5">
             <label htmlFor="p_notes" className="text-xs font-semibold text-foreground">Notes / Transaction reference</label>
-            <textarea id="p_notes" rows={2} placeholder="Customer paid via cash during salon checkout…" value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)}
+            <textarea id="p_notes" rows={2} placeholder="Customer paid via cash…" value={paymentNotes} onChange={(e) => setPaymentNotes(e.target.value)}
               className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
           </div>
-
           {recordError && (
             <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3">
-              <Icon icon="solar:danger-circle-broken" className="h-4 w-4 shrink-0" /><span>{recordError}</span>
+              <Icon icon="solar:danger-circle-broken" className="h-4 w-4 shrink-0" />{recordError}
             </div>
           )}
-
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => setRecordingInvoice(null)} disabled={recordLoading}>Cancel</Button>
             <Button type="submit" loading={recordLoading}>Record Payment</Button>
+          </div>
+        </form>
+      </SimpleModal>
+
+      {/* Promise-to-pay modal */}
+      <SimpleModal isOpen={!!promiseInvoice} onClose={() => setPromiseInvoice(null)} title="Promise to Pay" subtitle={promiseInvoice ? `Set a payment commitment date for ${promiseInvoice.invoice_number}` : undefined} variant="warning" width="max-w-sm">
+        <form onSubmit={handleSetPromiseDate} className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Overdue reminders will be paused until this date. If payment is not received by then, the sequence will resume automatically.
+          </p>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="promise_date" className="text-xs font-semibold text-foreground">Promised Payment Date</label>
+            <input id="promise_date" type="date" value={promiseDate} onChange={(e) => setPromiseDate(e.target.value)}
+              min={new Date().toISOString().split("T")[0]}
+              className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+          </div>
+          <div className="flex justify-end gap-3 pt-1">
+            {promiseInvoice?.promise_date && (
+              <Button type="button" variant="secondary" loading={promiseLoading} onClick={async () => {
+                setPromiseLoading(true);
+                await setInvoicePromiseDateAction(promiseInvoice.id, null);
+                setInvoices((prev) => prev.map((i) => i.id === promiseInvoice.id ? { ...i, promise_date: null } : i));
+                setPromiseLoading(false);
+                setPromiseInvoice(null);
+              }}>Clear Date</Button>
+            )}
+            <Button type="button" variant="secondary" onClick={() => setPromiseInvoice(null)}>Cancel</Button>
+            <Button type="submit" loading={promiseLoading}>Save Promise</Button>
           </div>
         </form>
       </SimpleModal>

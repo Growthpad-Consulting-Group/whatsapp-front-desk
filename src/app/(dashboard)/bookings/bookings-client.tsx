@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AnimatedMetricCard } from "@/components/ui/AnimatedMetricCard";
-import { cancelBookingAction, rescheduleBookingAction } from "@/actions/bookings";
+import { cancelBookingAction, rescheduleBookingAction, markNoShowAction } from "@/actions/bookings";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import StatusPill from "@/components/ui/StatusPill";
@@ -51,6 +51,10 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
 
+  // No-show
+  const [noShowId, setNoShowId] = useState<string | null>(null);
+  const [noShowLoading, setNoShowLoading] = useState(false);
+
   const formatDateTimeLocal = (dateStr: string) =>
     new Intl.DateTimeFormat("en-GB", {
       timeZone: business.timezone,
@@ -77,7 +81,18 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
     setModalError(null);
   };
 
-  const handleRescheduleSubmit = async (e: React.FormEvent) => {
+  const handleNoShow = async () => {
+    if (!noShowId) return;
+    setNoShowLoading(true);
+    const res = await markNoShowAction(noShowId);
+    setNoShowLoading(false);
+    if (res.success) {
+      setBookings((prev) => prev.map((b) => b.id === noShowId ? { ...b, status: "no_show" } : b));
+    }
+    setNoShowId(null);
+  };
+
+  const handleRescheduleSubmit = async (e: React.SyntheticEvent) => {
     e.preventDefault();
     if (!reschedulingBooking) return;
     setModalLoading(true);
@@ -144,9 +159,9 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <AnimatedMetricCard title="Active Bookings" value={stats.activeCount} icon="solar:calendar-broken" color="green" variant="card" mode="light" />
-        <AnimatedMetricCard title="Completed" value={stats.completedCount} icon="solar:clock-circle-broken" color="blue" variant="card" mode="light" />
-        <AnimatedMetricCard title="Cancelled" value={stats.cancelledCount} icon="solar:danger-circle-broken" color="red" variant="card" mode="light" />
+        <AnimatedMetricCard title="Active Bookings" value={stats.activeCount} icon="solar:calendar-broken" color="green" variant="card" />
+        <AnimatedMetricCard title="Completed" value={stats.completedCount} icon="solar:clock-circle-broken" color="blue" variant="card" />
+        <AnimatedMetricCard title="Cancelled" value={stats.cancelledCount} icon="solar:danger-circle-broken" color="red" variant="card" />
       </div>
 
       {/* Filters */}
@@ -245,17 +260,27 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
                   </div>
                 </div>
 
-                {appt.status !== "cancelled" && appt.status !== "completed" && (
-                  <div className="flex gap-3 border-t border-border/50 pt-4 mt-4">
+                {appt.status !== "cancelled" && appt.status !== "completed" && appt.status !== "no_show" && (
+                  <div className="flex gap-2 border-t border-border/50 pt-4 mt-4">
                     <Button type="button" variant="secondary" size="sm" onClick={() => openRescheduleModal(appt)} className="flex-1 text-xs">
                       Reschedule
                     </Button>
+                    {(appt.status === "confirmed" || appt.status === "pending") && (
+                      <Button
+                        type="button" variant="ghost" size="sm"
+                        onClick={() => setNoShowId(appt.id)}
+                        className="text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20 border border-amber-400/40 text-xs px-2"
+                        title="Mark as no-show"
+                      >
+                        <Icon icon="solar:user-cross-broken" className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
                     <Button
                       type="button" variant="ghost" size="sm"
                       onClick={() => setCancellingId(appt.id)}
-                      className="text-destructive hover:bg-destructive/10 border border-destructive/20 text-xs"
+                      className="text-destructive hover:bg-destructive/10 border border-destructive/20 text-xs px-2"
                     >
-                      Cancel
+                      <Icon icon="solar:close-broken" className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 )}
@@ -308,6 +333,19 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
           </div>
         </form>
       </SimpleModal>
+
+      {/* No-show confirm */}
+      <ConfirmModal
+        isOpen={!!noShowId}
+        onCancel={() => setNoShowId(null)}
+        onConfirm={handleNoShow}
+        loading={noShowLoading}
+        variant="warning"
+        title="Mark as no-show?"
+        description="This will update the booking status to no-show. The slot will be freed and no invoice will be auto-generated."
+        confirmLabel="Yes, Mark No-Show"
+        cancelLabel="Cancel"
+      />
 
       {/* Cancel confirm */}
       <ConfirmModal

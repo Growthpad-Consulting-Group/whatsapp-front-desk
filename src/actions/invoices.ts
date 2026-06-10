@@ -260,3 +260,53 @@ export async function createManualInvoiceAction(
     return { success: false, error: err.message || "An unexpected error occurred." };
   }
 }
+
+export async function setInvoicePromiseDateAction(
+  invoiceId: string,
+  promiseDate: string | null
+): Promise<ActionResult> {
+  try {
+    const { business } = await requireBusiness();
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("invoices")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ promise_date: promiseDate } as any)
+      .eq("id", invoiceId)
+      .eq("business_id", business.id);
+
+    if (error) return { success: false, error: error.message };
+
+    await createAuditLogAction("invoice.promise_date_set", invoiceId, { promise_date: promiseDate });
+    revalidatePath("/invoices");
+    return { success: true, data: undefined };
+  } catch (err: any) {
+    return { success: false, error: err.message || "An unexpected error occurred." };
+  }
+}
+
+export async function toggleInvoiceRemindersPausedAction(
+  invoiceId: string,
+  paused: boolean
+): Promise<ActionResult> {
+  try {
+    const { business } = await requireBusiness();
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("invoices")
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .update({ reminders_paused: paused } as any)
+      .eq("id", invoiceId)
+      .eq("business_id", business.id);
+
+    if (error) return { success: false, error: error.message };
+
+    await createAuditLogAction("invoice.reminders_toggled", invoiceId, { paused });
+    revalidatePath("/invoices");
+    return { success: true, data: undefined };
+  } catch (err: any) {
+    return { success: false, error: err.message || "An unexpected error occurred." };
+  }
+}

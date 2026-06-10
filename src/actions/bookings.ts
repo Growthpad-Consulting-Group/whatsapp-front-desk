@@ -181,3 +181,39 @@ export async function rescheduleBookingAction(
     return { success: false, error: err.message || "An unexpected error occurred." };
   }
 }
+
+export async function markNoShowAction(appointmentId: string): Promise<ActionResult> {
+  try {
+    const { business, staff } = await requireBusiness();
+    const supabase = await createClient();
+
+    const { data: appt, error: fetchError } = await supabase
+      .from("appointments")
+      .select("*, services(name)")
+      .eq("id", appointmentId)
+      .eq("business_id", business.id)
+      .single();
+
+    if (fetchError || !appt) return { success: false, error: "Appointment not found." };
+    if (!["confirmed", "pending"].includes(appt.status)) {
+      return { success: false, error: "Only confirmed or pending appointments can be marked as no-show." };
+    }
+
+    const { error: updateError } = await supabase
+      .from("appointments")
+      .update({ status: "no_show" })
+      .eq("id", appointmentId);
+
+    if (updateError) return { success: false, error: updateError.message };
+
+    await createAuditLogAction("booking.no_show", appointmentId, {
+      service: (appt.services as { name: string } | null)?.name,
+      marked_by: staff.name,
+    });
+
+    revalidatePath("/bookings");
+    return { success: true, data: undefined };
+  } catch (err: any) {
+    return { success: false, error: err.message || "An unexpected error occurred." };
+  }
+}

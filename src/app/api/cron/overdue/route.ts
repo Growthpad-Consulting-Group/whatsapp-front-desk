@@ -61,7 +61,9 @@ async function handleCron(request: NextRequest) {
     const { data: activeInvoices, error: invsError } = await supabase
       .from("invoices")
       .select("*, customers(*), businesses(*)")
-      .in("status", ["sent", "due", "overdue", "partially_paid"]);
+      .in("status", ["sent", "due", "overdue", "partially_paid"])
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .eq("reminders_paused" as any, false);
 
     if (invsError) {
       console.error("[Cron Overdue Invoice Query Error]:", invsError.message);
@@ -71,22 +73,28 @@ async function handleCron(request: NextRequest) {
     let remindersSentCount = 0;
 
     if (activeInvoices && activeInvoices.length > 0) {
-      for (const inv of activeInvoices) {
+      for (const _inv of activeInvoices) {
+        const inv = _inv as typeof _inv & { promise_date?: string | null };
         const customer = inv.customers as any;
         const business = inv.businesses as any;
 
         if (!customer || !business) continue;
 
-        const dueDate = new Date(inv.due_date);
-        
-        // Zero-out times for day-accurate calculations
         const todayDateOnly = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        // Skip invoices where customer has made a payment promise that hasn't expired yet
+        if (inv.promise_date) {
+          const promiseDateOnly = new Date(inv.promise_date);
+          if (promiseDateOnly >= todayDateOnly) continue;
+        }
+
+        const dueDate = new Date(inv.due_date);
         const dueDateOnly = new Date(dueDate.getFullYear(), dueDate.getMonth(), dueDate.getDate());
-        
+
         const diffTime = todayDateOnly.getTime() - dueDateOnly.getTime();
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-        let trigger: "invoice_due" | "invoice_overdue_1_3" | "invoice_overdue_4_7" | null = null;
+        let trigger: "invoice_due" | "invoice_overdue_1_3" | "invoice_overdue_4_7" | "invoice_overdue_8plus" | null = null;
         let overdueLabel = "";
 
         if (diffDays === 0) {
@@ -98,6 +106,9 @@ async function handleCron(request: NextRequest) {
         } else if (diffDays >= 4 && diffDays <= 7) {
           trigger = "invoice_overdue_4_7";
           overdueLabel = `is ${diffDays} day(s) overdue`;
+        } else if (diffDays >= 8) {
+          trigger = "invoice_overdue_8plus";
+          overdueLabel = `is ${diffDays} days overdue`;
         }
 
         if (!trigger) continue;
@@ -116,11 +127,10 @@ async function handleCron(request: NextRequest) {
         // Build reminder message
         const amountOutstanding = Number(inv.amount) - Number(inv.amount_paid);
         const invoiceLink = `${process.env.NEXT_PUBLIC_APP_URL}/invoice/${inv.id}`;
-        
-        const messageText = `Hi ${customer.name}, here is a friendly reminder that invoice ${inv.invoice_number} for ${formatCurrency(
-          amountOutstanding,
-          business.currency
-        )} ${overdueLabel}. Please view details and complete your payment here: ${invoiceLink} — ${business.name}`;
+
+        const messageText = trigger === "invoice_overdue_8plus"
+          ? `Hi ${customer.name}, this is an urgent notice that invoice ${inv.invoice_number} for ${formatCurrency(amountOutstanding, business.currency)} ${overdueLabel} and remains unpaid. Please settle this immediately or contact us to arrange payment: ${invoiceLink} — ${business.name}`
+          : `Hi ${customer.name}, here is a friendly reminder that invoice ${inv.invoice_number} for ${formatCurrency(amountOutstanding, business.currency)} ${overdueLabel}. Please view details and complete your payment here: ${invoiceLink} — ${business.name}`;
 
         try {
           const { messageId } = await whatsappClient.sendText(customer.phone, messageText);
