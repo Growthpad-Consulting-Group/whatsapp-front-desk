@@ -50,6 +50,25 @@ export function DashboardClient({
   heatmapAppointments = [],
 }: DashboardClientProps) {
   
+  // Helper to get initials
+  const getInitials = (name?: string) => {
+    if (!name) return "?";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  // Helper to format relative time
+  const formatRelativeTime = (timestamp: string) => {
+    const diff = Date.now() - new Date(timestamp).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return new Date(timestamp).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  };
+
   // Greeting message based on local time
   const greeting = useMemo(() => {
     const hours = new Date().getHours();
@@ -274,38 +293,98 @@ export function DashboardClient({
 
         {/* Agenda Section */}
         <section className="bg-card/75 backdrop-blur-md border border-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
-              <Icon icon="solar:list-broken" className="h-4 w-4 text-muted-foreground" />
-              Today&apos;s Agenda
-            </h2>
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex items-center justify-between border-b border-border/30 pb-3 mb-4 shrink-0">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Icon icon="solar:list-broken" className="h-4 w-4 text-muted-foreground" />
+                Today&apos;s Agenda
+              </h2>
+              {todayAppointments.length > 0 && (
+                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 shrink-0">
+                  {todayAppointments.length} Active
+                </span>
+              )}
+            </div>
+
             {todayAppointments.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground space-y-2">
-                <Icon icon="solar:calendar-broken" className="h-10 w-10 mx-auto text-muted-foreground/40" />
-                <p className="text-xs">No appointments scheduled for today.</p>
+              <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-muted-foreground space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-muted/40 flex items-center justify-center border border-border/40">
+                  <Icon icon="solar:calendar-broken" className="h-6 w-6 text-muted-foreground/50" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">No appointments today</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Your schedule is currently clear.</p>
+                </div>
               </div>
             ) : (
-              <ul className="space-y-4 max-h-75 overflow-y-auto pr-1">
-                {todayAppointments.map((appt: any) => (
-                  <li key={appt.id} className="flex items-start justify-between gap-3 bg-muted/20 border border-border/30 rounded-xl p-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {appt.customers?.name ?? "Unknown Customer"}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {appt.services?.name} · {formatDateTime(appt.start_at, business.timezone)}
-                      </p>
-                    </div>
-                    {getAppointmentBadge(appt)}
-                  </li>
-                ))}
+              <ul className="space-y-2.5 max-h-75 overflow-y-auto pr-1 custom-scrollbar flex-1 py-1">
+                {todayAppointments.map((appt: any) => {
+                  const startTime = new Date(appt.start_at).toLocaleTimeString("en-GB", {
+                    timeZone: business.timezone,
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: true,
+                  });
+                  return (
+                    <li
+                      key={appt.id}
+                      className="group flex gap-3.5 items-center p-3 bg-muted/15 dark:bg-slate-900/40 border border-border/40 rounded-2xl hover:bg-muted/30 transition-all duration-300 animate-in fade-in duration-300"
+                    >
+                      {/* Left: Time indicator */}
+                      <span className="text-[10px] font-extrabold text-muted-foreground w-13 shrink-0 text-right tracking-tight">
+                        {startTime}
+                      </span>
+
+                      {/* Accent divider */}
+                      <div className="w-[1.5px] h-6 bg-border shrink-0" />
+
+                      {/* Right Details */}
+                      <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-foreground truncate">
+                            {appt.customers?.name ?? "Client"}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5 font-semibold">
+                            {appt.services?.name || "Service"}
+                            {appt.staff_members?.name && ` · ${appt.staff_members.name.split(" ")[0]}`}
+                          </p>
+                        </div>
+
+                        {/* Status badge & Hover actions */}
+                        <div className="flex items-center gap-2.5 shrink-0">
+                          {getAppointmentBadge(appt)}
+                          
+                          {/* Quick Actions (Reveal on list item hover) */}
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
+                            {appt.customers?.phone && (
+                              <Link
+                                href={`/messages?chat=${appt.customers.phone}`}
+                                className="p-1 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105 active:scale-95"
+                                title="Chat with Client"
+                              >
+                                <Icon icon="solar:chat-square-broken" className="h-3 w-3" />
+                              </Link>
+                            )}
+                            <Link
+                              href={`/bookings?search=${encodeURIComponent(appt.customers?.name || "")}`}
+                              className="p-1 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 hover:scale-105 active:scale-95"
+                              title="Manage Booking"
+                            >
+                              <Icon icon="solar:calendar-broken" className="h-3 w-3" />
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
           {todayAppointments.length > 0 && (
             <Link
               href="/bookings"
-              className="mt-4 inline-flex items-center justify-center h-9 w-full rounded-xl border border-border text-xs font-semibold hover:bg-muted transition-colors"
+              className="mt-4 inline-flex items-center justify-center h-10 w-full rounded-xl border border-border bg-background hover:bg-muted text-xs font-bold text-foreground transition-all duration-200 active:scale-99 shadow-xs"
             >
               View Booking Sheet
             </Link>
@@ -314,46 +393,97 @@ export function DashboardClient({
 
         {/* Message Logs Section */}
         <section className="bg-card/75 backdrop-blur-md border border-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
-          <div>
-            <h2 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
-              <Icon icon="solar:chat-square-broken" className="h-4 w-4 text-muted-foreground" />
-              Live Inbox Feed
-            </h2>
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex items-center justify-between border-b border-border/30 pb-3 mb-4 shrink-0">
+              <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+                <Icon icon="solar:chat-square-broken" className="h-4 w-4 text-muted-foreground" />
+                Live Inbox Feed
+              </h2>
+              {recentMessages.length > 0 && (
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Live</span>
+                </div>
+              )}
+            </div>
+
             {recentMessages.length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground space-y-2">
-                <Icon icon="solar:chat-square-broken" className="h-10 w-10 mx-auto text-muted-foreground/40" />
-                <p className="text-xs">No messages logged yet. Check back shortly.</p>
+              <div className="flex-1 flex flex-col items-center justify-center py-12 text-center text-muted-foreground space-y-3">
+                <div className="w-12 h-12 rounded-2xl bg-muted/40 flex items-center justify-center border border-border/40">
+                  <Icon icon="solar:chat-square-broken" className="h-6 w-6 text-muted-foreground/50" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">No messages yet</p>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Incoming logs will appear here in real-time.</p>
+                </div>
               </div>
             ) : (
-              <ul className="space-y-3 max-h-75 overflow-y-auto pr-1">
-                {recentMessages.map((msg: any) => (
-                  <li key={msg.id} className="flex items-start gap-3 bg-muted/20 border border-border/30 rounded-xl p-3">
-                    <span
-                      className={`mt-1.5 h-2 w-2 rounded-full shrink-0 ${
-                        msg.direction === "inbound" ? "bg-primary" : "bg-muted-foreground/50"
-                      }`}
-                      aria-label={msg.direction}
-                    />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground truncate">
-                        {msg.customers?.name ?? msg.customers?.phone ?? "Client"}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
-                        {msg.content_summary}
-                      </p>
-                      <span className="text-[10px] text-muted-foreground block mt-1">
-                        {formatDateTime(msg.timestamp, business.timezone)}
-                      </span>
-                    </div>
-                  </li>
-                ))}
+              <ul className="space-y-4 max-h-75 overflow-y-auto pr-1 custom-scrollbar flex-1 py-1">
+                {recentMessages.map((msg: any) => {
+                  const isInbound = msg.direction === "inbound";
+                  return (
+                    <li
+                      key={msg.id}
+                      className={cn(
+                        "flex flex-col w-full group relative",
+                        isInbound ? "items-start" : "items-end"
+                      )}
+                    >
+                      {/* Name header */}
+                      <div className={cn(
+                        "flex items-center gap-2 px-1 text-[11px]",
+                        isInbound ? "flex-row" : "flex-row-reverse"
+                      )}>
+                        <span className="font-bold text-foreground/80">
+                          {isInbound ? (msg.customers?.name ?? msg.customers?.phone ?? "Client") : "Engine / Agent"}
+                        </span>
+                        {!isInbound && msg.customers?.name && (
+                          <span className="text-muted-foreground/60 text-[10px]">
+                            to {msg.customers.name.split(" ")[0]}
+                          </span>
+                        )}
+                        <span className="text-muted-foreground/50 text-[10px]">
+                          {formatRelativeTime(msg.timestamp)}
+                        </span>
+                      </div>
+
+                      {/* Speech Bubble */}
+                      <div className="relative mt-1.5 max-w-[85%] flex items-end gap-2">
+                        <div
+                          className={cn(
+                            "rounded-2xl px-3.5 py-2.5 text-xs shadow-xs border leading-relaxed",
+                            isInbound
+                              ? "bg-primary/[0.08] dark:bg-primary/10 border-primary/20 text-foreground rounded-tl-xs"
+                              : "bg-muted/50 dark:bg-slate-900/60 border-border/70 text-foreground rounded-tr-xs"
+                          )}
+                        >
+                          <p className="break-words whitespace-pre-wrap">{msg.content_summary}</p>
+                        </div>
+
+                        {/* Quick Chat Reply Button (Only shows for inbound on hover) */}
+                        {isInbound && msg.customers?.phone && (
+                          <Link
+                            href={`/messages?chat=${msg.customers.phone}`}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-xl border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 shrink-0 shadow-xs"
+                            title="Reply to Client"
+                          >
+                            <Icon icon="solar:chat-square-broken" className="h-3.5 w-3.5" />
+                          </Link>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>
           {recentMessages.length > 0 && (
             <Link
               href="/messages"
-              className="mt-4 inline-flex items-center justify-center h-9 w-full rounded-xl border border-border text-xs font-semibold hover:bg-muted transition-colors"
+              className="mt-4 inline-flex items-center justify-center h-10 w-full rounded-xl border border-border bg-background hover:bg-muted text-xs font-bold text-foreground transition-all duration-200 active:scale-99 shadow-xs"
             >
               Open Live Message Panel
             </Link>
