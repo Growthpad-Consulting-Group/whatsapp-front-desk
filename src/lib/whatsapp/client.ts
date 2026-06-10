@@ -5,11 +5,10 @@ export class WhatsAppCloudProvider implements MessagingProvider {
   private accessToken: string;
   private isMock: boolean;
 
-  constructor() {
-    this.phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID || "";
-    this.accessToken = process.env.WHATSAPP_ACCESS_TOKEN || "";
-    
-    // Treat as mock if environment keys are missing or contain placeholder text
+  constructor(phoneNumberId?: string, accessToken?: string) {
+    this.phoneNumberId = phoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID || "";
+    this.accessToken   = accessToken   || process.env.WHATSAPP_ACCESS_TOKEN    || "";
+
     this.isMock =
       !this.phoneNumberId ||
       !this.accessToken ||
@@ -134,5 +133,10 @@ export class WhatsAppCloudProvider implements MessagingProvider {
   }
 }
 
-// Export singleton instance
+/** Per-business factory — pass DB credentials when sending on behalf of a tenant. */
+export function createWhatsAppClient(phoneNumberId: string, accessToken: string) {
+  return new WhatsAppCloudProvider(phoneNumberId, accessToken);
+}
+
+/** Fallback singleton — reads from env vars (used in dev / single-tenant mode). */
 export const whatsappClient = new WhatsAppCloudProvider();

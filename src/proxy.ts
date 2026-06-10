@@ -43,6 +43,7 @@ export async function proxy(request: NextRequest) {
     "/signup",
     "/onboarding",
     "/auth/callback",
+    "/auth/accept-invite",
     "/book",
     "/api/webhooks",
     "/api/auth/google/callback",

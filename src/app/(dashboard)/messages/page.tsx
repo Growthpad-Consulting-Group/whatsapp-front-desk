@@ -46,14 +46,8 @@ export default async function MessagesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">Messages</h1>
-        <p className="text-sm text-muted-foreground">
-          Monitor real-time conversations, message logs, and human agent transfers.
-        </p>
-      </div>
-
       <MessagesClient
+        businessId={business.id}
         handoffSessions={(handoffs as any) || []}
         messageLogs={(logs as any) || []}
         timezone={business.timezone}

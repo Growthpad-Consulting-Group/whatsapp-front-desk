@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+/** @deprecated Use BusinessProfileSchema + BookingPoliciesSchema instead */
 export const BusinessSettingsSchema = z.object({
   name: z.string().min(2, "Business name must be at least 2 characters").trim(),
   industry: z.string().min(1, "Select an industry").optional().nullable(),
@@ -21,7 +22,38 @@ export const BusinessSettingsSchema = z.object({
     .optional(),
 });
 
+/** @deprecated */
 export type BusinessSettingsInput = z.infer<typeof BusinessSettingsSchema>;
+
+// ─── Split schemas ────────────────────────────────────────────────────────────
+
+export const BusinessProfileSchema = z.object({
+  name: z.string().min(2, "Business name must be at least 2 characters").trim(),
+  industry: z.string().min(1, "Select an industry").optional().nullable(),
+  timezone: z.string().min(1, "Select a timezone"),
+  currency: z.string().length(3, "Select a currency"),
+  whatsapp_number: z
+    .string()
+    .regex(/^\+\d{7,15}$/, "Enter a valid phone number in E.164 format e.g. +254712345678")
+    .trim(),
+});
+
+export type BusinessProfileInput = z.infer<typeof BusinessProfileSchema>;
+
+export const BookingPoliciesSchema = z.object({
+  cancellation_hours: z.coerce
+    .number()
+    .min(0, "Cancellation hours must be 0 or more")
+    .max(168, "Cancellation hours cannot exceed 7 days (168 hours)"),
+  deposit_default_percent: z.coerce
+    .number()
+    .min(0, "Deposit percentage must be 0 or more")
+    .max(100, "Deposit percentage cannot exceed 100")
+    .nullable()
+    .optional(),
+});
+
+export type BookingPoliciesInput = z.infer<typeof BookingPoliciesSchema>;
 
 export const ServiceSchema = z.object({
   name: z.string().min(2, "Service name must be at least 2 characters").trim(),

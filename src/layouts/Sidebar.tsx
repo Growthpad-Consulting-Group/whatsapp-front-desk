@@ -3,21 +3,12 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { Icon } from "@iconify/react";
 import { motion } from "framer-motion";
 import { logoutAction } from "@/actions/auth";
+import { navItems } from "@/data/nav";
 import { useState, useEffect, useRef } from "react";
-
-const navItems = [
-  { href: "/dashboard", label: "Today", icon: "solar:widget-broken" },
-  { href: "/bookings", label: "Bookings", icon: "solar:calendar-date-broken" },
-  { href: "/invoices", label: "Invoices", icon: "solar:document-text-broken" },
-  { href: "/customers", label: "Customers", icon: "solar:users-group-rounded-broken" },
-  { href: "/messages", label: "Messages", icon: "solar:chat-square-broken" },
-  { href: "/settings", label: "Settings", icon: "solar:settings-broken" },
-];
 
 interface SidebarProps {
   businessName?: string;
@@ -27,8 +18,6 @@ interface SidebarProps {
 
 export function Sidebar({ businessName, staffName, isOpen }: SidebarProps) {
   const pathname = usePathname();
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -47,9 +36,9 @@ export function Sidebar({ businessName, staffName, isOpen }: SidebarProps) {
       className={cn(
         "flex flex-col h-full my-4 rounded-3xl transition-all duration-300",
         "border border-white/20 dark:border-white/5",
-        isDark
-          ? "bg-gray-900/80 backdrop-blur-2xl text-gray-100 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)]"
-          : "bg-white/70 backdrop-blur-2xl text-gray-800 shadow-[0_8px_32px_0_rgba(31,38,135,0.07)]"
+        "bg-white/70 dark:bg-gray-900/80 backdrop-blur-2xl",
+        "text-gray-800 dark:text-gray-100",
+        "shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.3)]"
       )}
       style={{ width: isOpen ? 250 : 72 }}
     >
@@ -62,21 +51,33 @@ export function Sidebar({ businessName, staffName, isOpen }: SidebarProps) {
       >
         <Link href="/dashboard" className="hover:opacity-80 transition-opacity">
           {isOpen ? (
-            <Image
-              src={isDark ? "/assets/images/logo-white.svg" : "/logo.svg"}
-              alt="WhatsApp Front Desk"
-              width={160}
-              height={48}
-              className="w-36 h-auto"
-              priority
-            />
+            <>
+              {/* Light logo */}
+              <Image
+                src="/logo.svg"
+                alt="WhatsApp Front Desk"
+                width={160}
+                height={48}
+                className="w-36 h-auto block dark:hidden"
+                priority
+              />
+              {/* Dark logo */}
+              <Image
+                src="/assets/images/logo-white.svg"
+                alt="WhatsApp Front Desk"
+                width={160}
+                height={48}
+                className="w-36 h-auto hidden dark:block"
+                priority
+              />
+            </>
           ) : (
             <Image
-              src={isDark ? "/assets/images/logo-white.svg" : "/logo.svg"}
+              src="/favicon.png"
               alt="WhatsApp Front Desk"
-              width={40}
-              height={40}
-              className="w-9 h-9 object-contain"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain"
               priority
             />
           )}
@@ -90,8 +91,8 @@ export function Sidebar({ businessName, staffName, isOpen }: SidebarProps) {
 
       {/* Nav */}
       <nav aria-label="Main navigation" className="flex-1 px-3 py-4 overflow-y-auto overflow-x-hidden space-y-1">
-        {navItems.map(({ href, label, icon }, index) => {
-          const active = pathname === href || pathname.startsWith(`${href}/`);
+        {navItems.map(({ href, label, icon, matchPrefix }, index) => {
+          const active = pathname === href || (!!matchPrefix && pathname.startsWith(`${href}/`));
           return (
             <motion.div
               key={href}
@@ -108,9 +109,7 @@ export function Sidebar({ businessName, staffName, isOpen }: SidebarProps) {
                   !isOpen && "justify-center",
                   active
                     ? "bg-primary text-white shadow-lg shadow-primary/20"
-                    : isDark
-                      ? "text-gray-400 hover:bg-white/5 hover:text-white"
-                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-900"
+                    : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white"
                 )}
                 aria-current={active ? "page" : undefined}
                 title={!isOpen ? label : undefined}
@@ -141,7 +140,7 @@ export function Sidebar({ businessName, staffName, isOpen }: SidebarProps) {
           className={cn(
             "flex items-center gap-3 w-full rounded-xl p-2.5 transition-all duration-300",
             !isOpen && "justify-center",
-            isDark ? "hover:bg-white/5 text-gray-300 hover:text-white" : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
+            "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white"
           )}
         >
           <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 text-xs font-bold text-primary">

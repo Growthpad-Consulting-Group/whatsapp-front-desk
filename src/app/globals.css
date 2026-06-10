@@ -61,3 +61,27 @@ body {
   font-size: 1rem;
   line-height: 1.6;
 }
+
+/* Custom Scrollbar utility for chat feeds */
+.custom-scrollbar {
+  scrollbar-color: var(--muted-foreground) transparent;
+  scrollbar-width: thin;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--muted-foreground) 40%, transparent);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--muted-foreground);
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}

@@ -23,8 +23,6 @@ function useClickOutside(ref: React.RefObject<HTMLElement | null>, onClose: () =
 // ── Dropdown panel shell ─────────────────────────────────────────────────────
 
 function DropdownPanel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95, y: -4 }}
@@ -33,9 +31,9 @@ function DropdownPanel({ children, className = "" }: { children: React.ReactNode
       transition={{ duration: 0.15 }}
       className={[
         "absolute right-0 top-full mt-2 rounded-2xl shadow-2xl border z-50",
-        isDark
-          ? "bg-gray-900 border-white/10 text-gray-100 shadow-black/60"
-          : "bg-white border-gray-100 text-gray-900 shadow-gray-200/60",
+        "bg-white dark:bg-gray-900 border-gray-100 dark:border-white/10",
+        "text-gray-900 dark:text-gray-100",
+        "shadow-gray-200/60 dark:shadow-black/60",
         className,
       ].join(" ")}
     >
@@ -57,20 +55,13 @@ function HeaderIconButton({
   children: React.ReactNode;
   badge?: number;
 }) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   return (
     <motion.button
       onClick={onClick}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       title={title}
-      className={[
-        "relative flex items-center justify-center rounded-xl p-2 min-h-10 min-w-10 transition-all duration-300",
-        isDark
-          ? "bg-gray-800 text-gray-100 hover:bg-gray-700"
-          : "bg-gray-100/80 text-gray-700 hover:bg-gray-200",
-      ].join(" ")}
+      className="relative flex items-center justify-center rounded-xl p-2 min-h-10 min-w-10 transition-all duration-300 bg-gray-100/80 dark:bg-gray-800 text-gray-700 dark:text-gray-100 hover:bg-gray-200 dark:hover:bg-gray-700"
     >
       {children}
       {badge !== undefined && badge > 0 && (
@@ -95,36 +86,24 @@ const SEARCH_ROUTES = [
 ];
 
 function SearchModal({ onClose }: { onClose: () => void }) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const [query, setQuery] = useState("");
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const results = query.trim()
-    ? SEARCH_ROUTES.filter((r) =>
-        r.label.toLowerCase().includes(query.toLowerCase())
-      )
+    ? SEARCH_ROUTES.filter((r) => r.label.toLowerCase().includes(query.toLowerCase()))
     : SEARCH_ROUTES;
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+  useEffect(() => { inputRef.current?.focus(); }, []);
 
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  const go = (href: string) => {
-    router.push(href);
-    onClose();
-  };
-
+  const go = (href: string) => { router.push(href); onClose(); };
   const groups = Array.from(new Set(results.map((r) => r.group)));
 
   return (
@@ -133,7 +112,6 @@ function SearchModal({ onClose }: { onClose: () => void }) {
       className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh] px-4"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
-      {/* Backdrop */}
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
       <motion.div
@@ -141,12 +119,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: -8 }}
         transition={{ duration: 0.18 }}
-        className={[
-          "relative w-full max-w-lg rounded-2xl shadow-2xl border overflow-hidden",
-          isDark
-            ? "bg-gray-900 border-white/10"
-            : "bg-white border-gray-200",
-        ].join(" ")}
+        className="relative w-full max-w-lg rounded-2xl shadow-2xl border overflow-hidden bg-white dark:bg-gray-900 border-gray-200 dark:border-white/10"
       >
         {/* Input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 dark:border-white/10">
@@ -179,12 +152,7 @@ function SearchModal({ onClose }: { onClose: () => void }) {
                     <button
                       key={r.href}
                       onClick={() => go(r.href)}
-                      className={[
-                        "flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors text-left",
-                        isDark
-                          ? "hover:bg-white/5 text-gray-300 hover:text-white"
-                          : "hover:bg-gray-50 text-gray-700 hover:text-gray-900",
-                      ].join(" ")}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white"
                     >
                       <Icon icon={r.icon} className="w-4 h-4 shrink-0 text-primary" />
                       {r.label}
@@ -224,38 +192,12 @@ interface Notification {
 }
 
 const DEMO_NOTIFICATIONS: Notification[] = [
-  {
-    id: "1",
-    icon: "solar:calendar-date-broken",
-    iconColor: "text-blue-500",
-    title: "New booking",
-    body: "Sarah K. booked a haircut for tomorrow at 10am",
-    time: "2m ago",
-    read: false,
-  },
-  {
-    id: "2",
-    icon: "solar:chat-square-broken",
-    iconColor: "text-green-500",
-    title: "New WhatsApp message",
-    body: "Hi, can I reschedule my appointment?",
-    time: "15m ago",
-    read: false,
-  },
-  {
-    id: "3",
-    icon: "solar:document-text-broken",
-    iconColor: "text-purple-500",
-    title: "Invoice paid",
-    body: "Invoice #INV-042 was paid — R450.00",
-    time: "1h ago",
-    read: true,
-  },
+  { id: "1", icon: "solar:calendar-date-broken", iconColor: "text-blue-500", title: "New booking", body: "Sarah K. booked a haircut for tomorrow at 10am", time: "2m ago", read: false },
+  { id: "2", icon: "solar:chat-square-broken", iconColor: "text-green-500", title: "New WhatsApp message", body: "Hi, can I reschedule my appointment?", time: "15m ago", read: false },
+  { id: "3", icon: "solar:document-text-broken", iconColor: "text-purple-500", title: "Invoice paid", body: "Invoice #INV-042 was paid — R450.00", time: "1h ago", read: true },
 ];
 
 function NotificationsDropdown() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState(DEMO_NOTIFICATIONS);
   const ref = useRef<HTMLDivElement>(null);
@@ -278,10 +220,7 @@ function NotificationsDropdown() {
             <div className="flex items-center justify-between px-4 pt-4 pb-2">
               <span className="text-sm font-semibold">Notifications</span>
               {unread > 0 && (
-                <button
-                  onClick={markAllRead}
-                  className="text-xs text-primary hover:underline"
-                >
+                <button onClick={markAllRead} className="text-xs text-primary hover:underline">
                   Mark all read
                 </button>
               )}
@@ -289,9 +228,7 @@ function NotificationsDropdown() {
 
             <div className="divide-y divide-gray-100 dark:divide-white/5 max-h-80 overflow-y-auto">
               {notifications.length === 0 ? (
-                <p className="px-4 py-8 text-sm text-center text-muted-foreground">
-                  No notifications
-                </p>
+                <p className="px-4 py-8 text-sm text-center text-muted-foreground">No notifications</p>
               ) : (
                 notifications.map((n) => (
                   <button
@@ -304,8 +241,8 @@ function NotificationsDropdown() {
                     className={[
                       "flex items-start gap-3 w-full px-4 py-3 text-left transition-colors",
                       n.read
-                        ? isDark ? "hover:bg-white/5" : "hover:bg-gray-50"
-                        : isDark ? "bg-primary/5 hover:bg-primary/10" : "bg-primary/5 hover:bg-primary/10",
+                        ? "hover:bg-gray-50 dark:hover:bg-white/5"
+                        : "bg-primary/5 hover:bg-primary/10",
                     ].join(" ")}
                   >
                     <div className={`mt-0.5 shrink-0 ${n.iconColor}`}>
@@ -320,19 +257,14 @@ function NotificationsDropdown() {
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
                     </div>
-                    {!n.read && (
-                      <div className="mt-1.5 w-2 h-2 rounded-full bg-primary shrink-0" />
-                    )}
+                    {!n.read && <div className="mt-1.5 w-2 h-2 rounded-full bg-primary shrink-0" />}
                   </button>
                 ))
               )}
             </div>
 
             <div className="px-4 py-2.5 border-t border-gray-100 dark:border-white/10">
-              <button
-                onClick={() => setOpen(false)}
-                className="text-xs text-primary hover:underline w-full text-center"
-              >
+              <button onClick={() => setOpen(false)} className="text-xs text-primary hover:underline w-full text-center">
                 View all activity
               </button>
             </div>
@@ -352,8 +284,7 @@ const THEMES = [
 ] as const;
 
 function ThemeDropdown() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const currentIcon =
@@ -385,7 +316,7 @@ function ThemeDropdown() {
                     "flex items-center justify-center rounded-lg w-10 h-10 transition-all",
                     theme === t.value
                       ? "bg-white dark:bg-gray-700 text-primary shadow-md"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200",
                   ].join(" ")}
                 >
                   <Icon icon={t.icon} className="w-5 h-5" />
@@ -401,13 +332,7 @@ function ThemeDropdown() {
 
 // ── Profile dropdown ─────────────────────────────────────────────────────────
 
-interface ProfileDropdownProps {
-  staffName: string;
-}
-
-function ProfileDropdown({ staffName }: ProfileDropdownProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+function ProfileDropdown({ staffName }: { staffName: string }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const initial = staffName?.[0]?.toUpperCase() ?? "U";
@@ -448,12 +373,7 @@ function ProfileDropdown({ staffName }: ProfileDropdownProps) {
                     <a
                       href={href}
                       onClick={close}
-                      className={[
-                        "flex items-center gap-2 text-sm p-2 rounded-lg transition-all min-h-11",
-                        isDark
-                          ? "text-gray-300 hover:text-white hover:bg-gray-800"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
-                      ].join(" ")}
+                      className="flex items-center gap-2 text-sm p-2 rounded-lg transition-all min-h-11 text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800"
                     >
                       <Icon icon={icon} className="h-5 w-5" />
                       <span>{label}</span>
@@ -491,11 +411,8 @@ interface TopBarProps {
 }
 
 export function TopBar({ businessName, staffName, isSidebarOpen, onToggleSidebar }: TopBarProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const [searchOpen, setSearchOpen] = useState(false);
 
-  // ⌘K / Ctrl+K shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -515,15 +432,14 @@ export function TopBar({ businessName, staffName, isSidebarOpen, onToggleSidebar
         transition={{ duration: 0.4, ease: "easeOut" }}
         className="sticky top-0 z-20 px-4 pt-3 pb-1"
       >
-        <div
-          className={[
-            "flex items-center justify-between rounded-2xl px-3 py-2",
-            "border backdrop-saturate-180",
-            isDark
-              ? "bg-gray-900/20 backdrop-blur-2xl text-white shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] border-white/10"
-              : "bg-white/20 backdrop-blur-2xl text-gray-900 shadow-[0_8px_32px_0_rgba(31,38,135,0.12)] border-white/40",
-          ].join(" ")}
-        >
+        <div className={[
+          "flex items-center justify-between rounded-2xl px-3 py-2",
+          "border backdrop-saturate-180",
+          "bg-white/20 dark:bg-gray-900/20 backdrop-blur-2xl",
+          "text-gray-900 dark:text-white",
+          "shadow-[0_8px_32px_0_rgba(31,38,135,0.12)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.4)]",
+          "border-white/40 dark:border-white/10",
+        ].join(" ")}>
           {/* Left: toggle + search */}
           <div className="flex items-center gap-2">
             <motion.button
@@ -542,27 +458,17 @@ export function TopBar({ businessName, staffName, isSidebarOpen, onToggleSidebar
             {/* Mobile title */}
             <p className="lg:hidden text-sm font-semibold truncate">{businessName}</p>
 
-            {/* Search */}
+            {/* Search trigger */}
             <motion.button
               onClick={() => setSearchOpen(true)}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={[
-                "hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm transition-all border",
-                isDark
-                  ? "bg-gray-800/80 text-gray-400 hover:text-gray-200 border-white/5 hover:bg-gray-700/80"
-                  : "bg-gray-100/80 text-gray-400 hover:text-gray-600 border-black/5 hover:bg-gray-200/80",
-              ].join(" ")}
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm transition-all border bg-gray-100/80 dark:bg-gray-800/80 text-gray-400 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 border-black/5 dark:border-white/5 hover:bg-gray-200/80 dark:hover:bg-gray-700/80"
               title="Search (⌘K)"
             >
               <Icon icon="solar:magnifer-broken" className="w-4 h-4 shrink-0" />
               <span className="hidden md:block">Search…</span>
-              <div className={[
-                "hidden lg:flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border",
-                isDark
-                  ? "bg-white/10 text-gray-500 border-gray-700"
-                  : "bg-black/5 text-gray-400 border-gray-200",
-              ].join(" ")}>
+              <div className="hidden lg:flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold border bg-black/5 dark:bg-white/10 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-700">
                 <span className="text-[11px] opacity-70">⌘</span>
                 <span>K</span>
               </div>
@@ -578,7 +484,6 @@ export function TopBar({ businessName, staffName, isSidebarOpen, onToggleSidebar
         </div>
       </motion.header>
 
-      {/* Search modal */}
       <AnimatePresence>
         {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
       </AnimatePresence>

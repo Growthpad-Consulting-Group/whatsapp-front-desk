@@ -20,9 +20,22 @@ export default function SettingsLayout({
         description="Manage your business profile, services, team, and operating hours."
       />
 
-      <SettingsNav />
+      <div className="flex gap-8 items-start">
+        {/* Left — vertical settings nav */}
+        <aside className="hidden lg:flex flex-col w-52 shrink-0">
+          <SettingsNav />
+        </aside>
 
-      <div>{children}</div>
+        {/* Mobile — horizontal scrollable nav */}
+        <div className="lg:hidden w-full overflow-x-auto pb-2">
+          <SettingsNav />
+        </div>
+
+        {/* Right — page content */}
+        <div className="flex-1 min-w-0">
+          {children}
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getAvailableSlots } from "@/lib/availability/engine";
-import { whatsappClient } from "./client";
+import { createWhatsAppClient } from "./client";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 
 interface ConversationContext {
@@ -55,6 +55,12 @@ export async function handleWhatsAppMessage(
     console.error(`Business not found: ${businessId}`);
     return;
   }
+
+  // Per-business WhatsApp client using the tenant's own credentials
+  const whatsappClient = createWhatsAppClient(
+    business.whatsapp_phone_number_id ?? "",
+    business.whatsapp_access_token ?? ""
+  );
 
   // 2. Find or create the customer
   let { data: customer } = await supabase

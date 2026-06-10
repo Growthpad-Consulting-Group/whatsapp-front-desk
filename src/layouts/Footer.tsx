@@ -1,22 +1,12 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import Link from "next/link";
 
 export function Footer() {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const year = new Date().getFullYear();
 
   return (
-    <footer
-      className={[
-        "mt-auto mx-4 mb-3 py-3 px-6 rounded-xl border backdrop-blur-sm transition-all duration-300",
-        isDark
-          ? "bg-gray-900/50 border-gray-800 text-gray-500"
-          : "bg-white/80 border-gray-100 text-gray-400",
-      ].join(" ")}
-    >
+    <footer className="mt-auto mx-4 mb-3 py-3 px-6 rounded-xl border backdrop-blur-sm transition-all duration-300 bg-white/80 dark:bg-gray-900/50 border-gray-100 dark:border-gray-800 text-gray-400 dark:text-gray-500">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
         <p className="text-sm">
           <span className="opacity-60">© {year}</span>{" "}

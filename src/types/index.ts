@@ -54,9 +54,11 @@ export interface Business {
   timezone: string;
   currency: string;
   whatsapp_number: string;
+  whatsapp_phone_number_id: string | null;
+  whatsapp_access_token: string | null;
   logo_url: string | null;
   billing_plan: string;
-  cancellation_hours: number; // hours before appointment that cancellation is allowed
+  cancellation_hours: number;
   deposit_default_percent: number | null;
   created_at: string;
   updated_at: string;

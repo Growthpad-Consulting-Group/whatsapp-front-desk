@@ -13,7 +13,9 @@ import { SimpleModal } from "@/components/common/SimpleModal";
 import { ConfirmModal } from "@/components/common/ConfirmModal";
 import { WeekCalendar } from "@/components/ui/WeekCalendar";
 import { Icon } from "@iconify/react";
+import { DateRangePicker, type DateRangeValue } from "@/components/ui/DateRangePicker";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { TooltipButton } from "@/components/ui/TooltipButton";
 import toast from "react-hot-toast";
 import type { Business } from "@/types";
 
@@ -40,7 +42,7 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
   const [selectedStaff, setSelectedStaff] = useState("all");
   const [selectedService, setSelectedService] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
-  const [selectedDate, setSelectedDate] = useState("");
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ start: "", end: "", label: "" });
 
   // View mode
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
@@ -148,11 +150,14 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
     const matchesService = selectedService === "all" || b.service_id === selectedService;
     const matchesStatus = selectedStatus === "all" || b.status === selectedStatus;
     let matchesDate = true;
-    if (selectedDate) {
-      matchesDate = new Date(b.start_at).toLocaleDateString("en-CA", { timeZone: business.timezone }) === selectedDate;
+    if (dateRange.start && dateRange.end) {
+      const apptDate = new Date(b.start_at);
+      const start = new Date(dateRange.start + "T00:00:00");
+      const end   = new Date(dateRange.end   + "T23:59:59");
+      matchesDate = apptDate >= start && apptDate <= end;
     }
     return matchesSearch && matchesStaff && matchesService && matchesStatus && matchesDate;
-  }), [bookings, searchTerm, selectedStaff, selectedService, selectedStatus, selectedDate, business.timezone]);
+  }), [bookings, searchTerm, selectedStaff, selectedService, selectedStatus, dateRange]);
 
   const stats = useMemo(() => ({
     activeCount: bookings.filter((b) => b.status === "confirmed" || b.status === "pending").length,
@@ -167,7 +172,7 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
 
   const clearFilters = () => {
     setSearchTerm(""); setSelectedStaff("all"); setSelectedService("all");
-    setSelectedStatus("all"); setSelectedDate("");
+    setSelectedStatus("all"); setDateRange({ start: "", end: "", label: "" });
   };
 
   return (
@@ -208,7 +213,7 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
               <option value="all">All Services</option>
               {services.map((srv) => <option key={srv.id} value={srv.id}>{srv.name}</option>)}
             </select>
-            <DatePicker value={selectedDate} onChange={setSelectedDate} placeholder="Filter by date" clearable />
+            <DateRangePicker value={dateRange} onChange={setDateRange} placeholder="Filter by date range" />
           </div>
         </div>
 
@@ -216,9 +221,7 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
           <div className="flex items-center gap-3">
             <Tabs tabs={statusTabs} activeTab={selectedStatus} onChange={setSelectedStatus} />
             <div className="flex gap-2">
-              <Button variant="secondary" size="sm" onClick={() => setSelectedDate(new Date().toLocaleDateString("en-CA", { timeZone: business.timezone }))}>Today</Button>
-              <Button variant="secondary" size="sm" onClick={() => setSelectedDate(new Date(Date.now() + 86400000).toLocaleDateString("en-CA", { timeZone: business.timezone }))}>Tomorrow</Button>
-              {(searchTerm || selectedStaff !== "all" || selectedService !== "all" || selectedStatus !== "all" || selectedDate) && (
+              {(searchTerm || selectedStaff !== "all" || selectedService !== "all" || selectedStatus !== "all" || dateRange.start) && (
                 <Button variant="ghost" size="sm" onClick={clearFilters} className="flex items-center gap-1 border border-border">
                   <Icon icon="solar:close-broken" className="h-3.5 w-3.5" /> Clear
                 </Button>
@@ -318,22 +321,19 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
                       Reschedule
                     </Button>
                     {(appt.status === "confirmed" || appt.status === "pending") && (
-                      <Button
-                        type="button" variant="ghost" size="sm"
+                      <TooltipButton
+                        tooltip="Mark as no-show"
+                        icon="solar:user-cross-broken"
+                        variant="warning"
                         onClick={() => setNoShowId(appt.id)}
-                        className="text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/20 border border-amber-400/40 text-xs px-2"
-                        title="Mark as no-show"
-                      >
-                        <Icon icon="solar:user-cross-broken" className="h-3.5 w-3.5" />
-                      </Button>
+                      />
                     )}
-                    <Button
-                      type="button" variant="ghost" size="sm"
+                    <TooltipButton
+                      tooltip="Cancel booking"
+                      icon="solar:close-circle-broken"
+                      variant="destructive"
                       onClick={() => setCancellingId(appt.id)}
-                      className="text-destructive hover:bg-destructive/10 border border-destructive/20 text-xs px-2"
-                    >
-                      <Icon icon="solar:close-circle-broken" className="h-3.5 w-3.5" />
-                    </Button>
+                    />
                   </div>
                 )}
               </div>

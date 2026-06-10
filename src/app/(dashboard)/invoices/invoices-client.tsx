@@ -11,6 +11,7 @@ import StatusPill from "@/components/ui/StatusPill";
 import { Tabs } from "@/components/ui/Tabs";
 import { SimpleModal } from "@/components/common/SimpleModal";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { DateRangePicker, type DateRangeValue } from "@/components/ui/DateRangePicker";
 import toast from "react-hot-toast";
 import {
   sendInvoiceAction,
@@ -74,6 +75,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [dateRange, setDateRange] = useState<DateRangeValue>({ start: "", end: "", label: "" });
 
   // Create invoice modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -118,8 +120,12 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
       customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       customer?.phone?.includes(searchTerm);
     const matchesStatus = selectedStatus === "all" || inv.status === selectedStatus;
-    return matchesSearch && matchesStatus;
-  }), [invoices, searchTerm, selectedStatus]);
+    let matchesDate = true;
+    if (dateRange.start && dateRange.end && inv.due_date) {
+      matchesDate = inv.due_date >= dateRange.start && inv.due_date <= dateRange.end;
+    }
+    return matchesSearch && matchesStatus && matchesDate;
+  }), [invoices, searchTerm, selectedStatus, dateRange]);
 
   const statusTabs = STATUS_TABS.map((t) => ({
     ...t,
@@ -240,9 +246,17 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
               className="h-10 w-full pl-9 pr-4 rounded-xl border border-border bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          <span className="text-xs text-muted-foreground shrink-0">
-            {filteredInvoices.length} of {invoices.length} invoices
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <DateRangePicker
+              value={dateRange}
+              onChange={setDateRange}
+              placeholder="Filter by due date"
+              className="w-52"
+            />
+            <span className="text-xs text-muted-foreground">
+              {filteredInvoices.length} of {invoices.length}
+            </span>
+          </div>
         </div>
         <div className="border-t border-border/50 pt-4">
           <Tabs tabs={statusTabs} activeTab={selectedStatus} onChange={setSelectedStatus} />

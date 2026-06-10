@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Icon } from "@iconify/react";
 import { AnimatedMetricCard } from "@/components/ui/AnimatedMetricCard";
 import { DashboardCharts } from "@/components/ui/DashboardCharts";
+import { BookingHeatmap, type HeatmapAppointment } from "@/components/ui/BookingHeatmap";
 
 
 
@@ -21,6 +22,7 @@ interface DashboardClientProps {
   recentMessages: any[];
   cancelledCount: number;
   staffName: string;
+  staffId: string;
   onboardingSteps: {
     hoursConfigured: boolean;
     servicesAdded: boolean;
@@ -29,6 +31,7 @@ interface DashboardClientProps {
   business: any;
   weeklyBookings?: WeeklyBookingData;
   revenueData?: RevenueData;
+  heatmapAppointments?: HeatmapAppointment[];
 }
 
 export function DashboardClient({
@@ -39,10 +42,12 @@ export function DashboardClient({
   recentMessages,
   cancelledCount,
   staffName,
+  staffId,
   onboardingSteps,
   business,
   weeklyBookings,
   revenueData,
+  heatmapAppointments = [],
 }: DashboardClientProps) {
   
   // Greeting message based on local time
@@ -189,9 +194,9 @@ export function DashboardClient({
                   Connect staff Google Cal
                 </span>
                 {!onboardingSteps.calendarConnected && (
-                  <Link href="/settings/staff" className="text-primary font-semibold hover:underline">
+                  <a href={`/api/auth/google/redirect?staffId=${staffId}`} className="text-primary font-semibold hover:underline">
                     Connect
-                  </Link>
+                  </a>
                 )}
               </div>
             </div>
@@ -256,6 +261,13 @@ export function DashboardClient({
           currency={business.currency || "KES"}
         />
       )}
+
+      {/* Booking Heatmap */}
+      <BookingHeatmap
+        appointments={heatmapAppointments}
+        timezone={business.timezone}
+        title="Booking Patterns (Last 30 Days)"
+      />
 
       {/* Bottom Dual Grid - Agenda & Messages */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -323,7 +335,7 @@ export function DashboardClient({
                       aria-label={msg.direction}
                     />
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-foreground truncate">
+                      <p className="text-sm font-semibold text-foreground truncate">
                         {msg.customers?.name ?? msg.customers?.phone ?? "Client"}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">

@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { requireBusiness } from "@/lib/data/business";
-import { BusinessSettingsSchema, OperatingHoursSchema } from "@/lib/validations/settings";
+import {
+  BusinessSettingsSchema,
+  BusinessProfileSchema,
+  BookingPoliciesSchema,
+  OperatingHoursSchema,
+} from "@/lib/validations/settings";
 import type { ActionResult } from "@/types";
 
 export async function updateBusinessSettingsAction(
@@ -50,6 +55,81 @@ export async function updateBusinessSettingsAction(
     if (error) {
       return { success: false, error: error.message };
     }
+
+    revalidatePath("/settings");
+    return { success: true, data: undefined };
+  } catch (err: any) {
+    return { success: false, error: err.message || "An unexpected error occurred." };
+  }
+}
+
+// ─── Per-section focused actions ─────────────────────────────────────────────
+
+/** Updates only identity + contact fields (name, industry, timezone, currency, whatsapp_number). */
+export async function updateBusinessProfileAction(
+  _prev: ActionResult | undefined,
+  formData: FormData
+): Promise<ActionResult> {
+  try {
+    const { business, staff } = await requireBusiness();
+    if (staff.role !== "owner") {
+      return { success: false, error: "Only the business owner can edit settings." };
+    }
+
+    const parsed = BusinessProfileSchema.safeParse({
+      name: formData.get("name"),
+      industry: formData.get("industry"),
+      timezone: formData.get("timezone"),
+      currency: formData.get("currency"),
+      whatsapp_number: formData.get("whatsapp_number"),
+    });
+
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("businesses")
+      .update(parsed.data)
+      .eq("id", business.id);
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/settings");
+    return { success: true, data: undefined };
+  } catch (err: any) {
+    return { success: false, error: err.message || "An unexpected error occurred." };
+  }
+}
+
+/** Updates only booking policy fields (cancellation_hours, deposit_default_percent). */
+export async function updateBookingPoliciesAction(
+  _prev: ActionResult | undefined,
+  formData: FormData
+): Promise<ActionResult> {
+  try {
+    const { business, staff } = await requireBusiness();
+    if (staff.role !== "owner") {
+      return { success: false, error: "Only the business owner can edit settings." };
+    }
+
+    const parsed = BookingPoliciesSchema.safeParse({
+      cancellation_hours: formData.get("cancellation_hours"),
+      deposit_default_percent: formData.get("deposit_default_percent") || null,
+    });
+
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0].message };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("businesses")
+      .update(parsed.data)
+      .eq("id", business.id);
+
+    if (error) return { success: false, error: error.message };
 
     revalidatePath("/settings");
     return { success: true, data: undefined };
@@ -171,6 +251,35 @@ export async function updateMessageTemplateAction(
       revalidatePath("/settings/templates");
       return { success: true, data };
     }
+  } catch (err: any) {
+    return { success: false, error: err.message || "An unexpected error occurred." };
+  }
+}
+
+export async function updateWhatsAppCredentialsAction(
+  phoneNumberId: string,
+  accessToken: string
+): Promise<ActionResult> {
+  try {
+    const { business, staff } = await requireBusiness();
+
+    if (staff.role !== "owner") {
+      return { success: false, error: "Only the business owner can update WhatsApp credentials." };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("businesses")
+      .update({
+        whatsapp_phone_number_id: phoneNumberId.trim() || null,
+        whatsapp_access_token:    accessToken.trim()    || null,
+      })
+      .eq("id", business.id);
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/settings");
+    return { success: true, data: undefined };
   } catch (err: any) {
     return { success: false, error: err.message || "An unexpected error occurred." };
   }

@@ -1,14 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "next-themes";
+import Select from "react-select";
 import { createServiceAction, updateServiceAction, toggleServiceActiveAction } from "@/actions/services";
 import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
 import { Input } from "@/components/ui/input";
 import { formatCurrency } from "@/lib/utils";
 import { Icon } from "@iconify/react";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { SimpleModal } from "@/components/common/SimpleModal";
+import { TooltipButton } from "@/components/ui/TooltipButton";
+import { getSelectStyles } from "@/utils/selectStyles";
 
 interface ServiceWithStaff {
   id: string;
@@ -33,6 +38,7 @@ interface ServicesClientProps {
 }
 
 export function ServicesClient({ initialServices, staffMembers, currency, isOwner }: ServicesClientProps) {
+  const { resolvedTheme } = useTheme();
   const [services, setServices] = useState<ServiceWithStaff[]>(initialServices);
   const [isOpen, setIsOpen] = useState(false);
   const [editingService, setEditingService] = useState<ServiceWithStaff | null>(null);
@@ -83,8 +89,11 @@ export function ServicesClient({ initialServices, staffMembers, currency, isOwne
     const newActive = !currentActive;
     setServices((prev) => prev.map((s) => (s.id === id ? { ...s, active: newActive } : s)));
     const res = await toggleServiceActiveAction(id, newActive);
-    if (!res.success) {
+    if (res.success) {
+      toast.success(newActive ? "Service activated." : "Service deactivated.");
+    } else {
       setServices((prev) => prev.map((s) => (s.id === id ? { ...s, active: currentActive } : s)));
+      toast.error("Failed to update service.");
     }
   };
 
@@ -119,6 +128,7 @@ export function ServicesClient({ initialServices, staffMembers, currency, isOwne
               : s
           )
         );
+        toast.success("Service updated.");
         setIsOpen(false);
       } else {
         setError(res.error);
@@ -133,6 +143,7 @@ export function ServicesClient({ initialServices, staffMembers, currency, isOwne
           { id: res.data, ...payload, staff_members: staffName ? { name: staffName } : null },
           ...prev,
         ]);
+        toast.success("Service created.");
         setIsOpen(false);
       }
     }
@@ -169,25 +180,20 @@ export function ServicesClient({ initialServices, staffMembers, currency, isOwne
                     {service.name}
                   </h3>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <button
+                    <TooltipButton
+                      tooltip={service.active ? "Deactivate" : "Activate"}
+                      icon={service.active ? "solar:check-circle-broken" : "solar:eye-closed-broken"}
+                      variant={service.active ? "success" : "ghost"}
                       onClick={() => handleToggleActive(service.id, service.active)}
                       disabled={!isOwner}
-                      title={service.active ? "Deactivate" : "Activate"}
-                      className={`p-1.5 rounded-lg border transition-colors ${
-                        service.active
-                          ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100 dark:bg-green-950/20 dark:border-green-900 dark:text-green-400"
-                          : "bg-muted border-border text-muted-foreground hover:bg-muted/80"
-                      }`}
-                    >
-                      <Icon icon={service.active ? "solar:check-circle-broken" : "solar:eye-closed-broken"} className="h-3.5 w-3.5" />
-                    </button>
+                    />
                     {isOwner && (
-                      <button
+                      <TooltipButton
+                        tooltip="Edit service"
+                        icon="solar:pen-2-broken"
+                        variant="ghost"
                         onClick={() => handleOpenEdit(service)}
-                        className="p-1.5 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      >
-                        <Icon icon="solar:pen-2-broken" className="h-3.5 w-3.5" />
-                      </button>
+                      />
                     )}
                   </div>
                 </div>
@@ -287,18 +293,18 @@ export function ServicesClient({ initialServices, staffMembers, currency, isOwne
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="staff_assignment" className="text-sm font-medium text-foreground">Assigned Staff (Default)</label>
-            <select
-              id="staff_assignment"
-              value={staffId}
-              onChange={(e) => setStaffId(e.target.value)}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="">Any active staff member</option>
-              {staffMembers.map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
+            <label className="text-sm font-medium text-foreground">Assigned Staff (Default)</label>
+            <Select
+              inputId="staff_assignment"
+              options={[
+                { value: "", label: "Any active staff member" },
+                ...staffMembers.map((m) => ({ value: m.id, label: m.name })),
+              ]}
+              value={staffId === "" ? { value: "", label: "Any active staff member" } : staffMembers.find((m) => m.id === staffId) ? { value: staffId, label: staffMembers.find((m) => m.id === staffId)!.name } : null}
+              onChange={(opt) => setStaffId((opt as { value: string } | null)?.value ?? "")}
+              styles={getSelectStyles(resolvedTheme)}
+              isSearchable={false}
+            />
           </div>
 
           {error && (

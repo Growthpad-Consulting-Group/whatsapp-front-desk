@@ -1,46 +1,116 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import { Icon } from "@iconify/react";
-import { updateBusinessSettingsAction } from "@/actions/business";
+import { updateBusinessProfileAction, updateBookingPoliciesAction } from "@/actions/business";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { INDUSTRIES, TIMEZONES, CURRENCIES } from "@/lib/validations/onboarding";
 import type { Business } from "@/types";
+import toast from "react-hot-toast";
 
 interface BusinessProfileFormProps {
   business: Business;
   isOwner: boolean;
 }
 
+// ─── Shared primitives ────────────────────────────────────────────────────────
+
 function SectionHeader({ icon, title, description }: { icon: string; title: string; description: string }) {
   return (
-    <div className="flex items-start gap-3 pb-4 border-b border-border/60">
-      <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-        <Icon icon={icon} className="w-5 h-5 text-primary" />
+    <div className="flex items-start gap-3.5 pb-5 border-b border-border/50">
+      <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-blue-600 to-blue-400 shadow-sm shadow-blue-500/10 flex items-center justify-center shrink-0">
+        <Icon icon={icon} className="w-5 h-5 text-white" aria-hidden="true" />
       </div>
       <div>
-        <h2 className="text-base font-semibold text-foreground">{title}</h2>
-        <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
+        <h2 className="text-base font-extrabold text-foreground leading-snug">{title}</h2>
+        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{description}</p>
       </div>
     </div>
   );
 }
 
-export function BusinessProfileForm({ business, isOwner }: BusinessProfileFormProps) {
-  const [state, dispatch, pending] = useActionState(updateBusinessSettingsAction, undefined);
+function SectionCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+  return (
+    <div className={`bg-card/60 dark:bg-slate-900/60 backdrop-blur-md border border-border/80 rounded-2xl p-6 shadow-sm space-y-6 transition-all duration-300 hover:shadow-md ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+function SaveRow({ pending, disabled }: { pending: boolean; disabled: boolean }) {
+  if (disabled) return null;
+  return (
+    <div className="flex items-center justify-end pt-2 border-t border-border/40">
+      <Button
+        type="submit"
+        loading={pending}
+        className="px-5 h-9 text-sm font-bold rounded-xl active:scale-95 transition-all duration-300"
+      >
+        Save
+      </Button>
+    </div>
+  );
+}
+
+// ─── Select wrapper to match Input styling ────────────────────────────────────
+
+function Select({
+  id,
+  name,
+  label,
+  disabled,
+  required,
+  defaultValue,
+  children,
+}: {
+  id: string;
+  name: string;
+  label: string;
+  disabled?: boolean;
+  required?: boolean;
+  defaultValue?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-medium text-foreground">
+        {label}
+      </label>
+      <select
+        id={id}
+        name={name}
+        disabled={disabled}
+        required={required}
+        defaultValue={defaultValue}
+        className="h-10 w-full rounded-xl border border-border/80 bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-border/100 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {children}
+      </select>
+    </div>
+  );
+}
+
+// ─── Section 1: Business Identity ────────────────────────────────────────────
+
+function BusinessIdentityForm({ business, isOwner }: { business: Business; isOwner: boolean }) {
+  const [state, dispatch, pending] = useActionState(updateBusinessProfileAction, undefined);
+
+  useEffect(() => {
+    if (state?.success === true) toast.success("Business profile saved.");
+    else if (state?.success === false) toast.error(state.error || "Failed to save.");
+  }, [state]);
 
   return (
-    <form action={dispatch} className="space-y-5">
-      {/* Business Identity */}
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
-        <SectionHeader
-          icon="solar:buildings-2-broken"
-          title="Business Profile"
-          description="Your business identity, contact details, and regional settings."
-        />
+    <SectionCard>
+      <SectionHeader
+        icon="solar:buildings-2-broken"
+        title="Business Profile"
+        description="Your business identity, contact details, and regional settings."
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <form action={dispatch} className="space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <Input
             label="Business name"
             name="name"
@@ -50,24 +120,19 @@ export function BusinessProfileForm({ business, isOwner }: BusinessProfileFormPr
             required
           />
 
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="industry" className="text-sm font-medium text-foreground">
-              Industry
-            </label>
-            <select
-              id="industry"
-              name="industry"
-              disabled={!isOwner}
-              required
-              defaultValue={business.industry || ""}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="" disabled>Select your industry</option>
-              {INDUSTRIES.map((ind) => (
-                <option key={ind} value={ind}>{ind}</option>
-              ))}
-            </select>
-          </div>
+          <Select
+            id="industry"
+            name="industry"
+            label="Industry"
+            disabled={!isOwner}
+            required
+            defaultValue={business.industry || ""}
+          >
+            <option value="" disabled>Select your industry</option>
+            {INDUSTRIES.map((ind) => (
+              <option key={ind} value={ind}>{ind}</option>
+            ))}
+          </Select>
 
           <Input
             label="WhatsApp WABA Number"
@@ -80,54 +145,60 @@ export function BusinessProfileForm({ business, isOwner }: BusinessProfileFormPr
           />
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="timezone" className="text-sm font-medium text-foreground">
-                Timezone
-              </label>
-              <select
-                id="timezone"
-                name="timezone"
-                disabled={!isOwner}
-                required
-                defaultValue={business.timezone}
-                className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {TIMEZONES.map((tz) => (
-                  <option key={tz.value} value={tz.value}>{tz.label}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              id="timezone"
+              name="timezone"
+              label="Timezone"
+              disabled={!isOwner}
+              required
+              defaultValue={business.timezone}
+            >
+              {TIMEZONES.map((tz) => (
+                <option key={tz.value} value={tz.value}>{tz.label}</option>
+              ))}
+            </Select>
 
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="currency" className="text-sm font-medium text-foreground">
-                Currency
-              </label>
-              <select
-                id="currency"
-                name="currency"
-                disabled={!isOwner}
-                required
-                defaultValue={business.currency}
-                className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {CURRENCIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
-                ))}
-              </select>
-            </div>
+            <Select
+              id="currency"
+              name="currency"
+              label="Currency"
+              disabled={!isOwner}
+              required
+              defaultValue={business.currency}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </Select>
           </div>
         </div>
-      </div>
 
-      {/* Booking & Payment Policies */}
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-5">
-        <SectionHeader
-          icon="solar:shield-check-broken"
-          title="Booking & Payment Policies"
-          description="Default rules for client cancellations and deposit requirements."
-        />
+        <SaveRow pending={pending} disabled={!isOwner} />
+      </form>
+    </SectionCard>
+  );
+}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+// ─── Section 2: Booking & Payment Policies ────────────────────────────────────
+
+function BookingPoliciesForm({ business, isOwner }: { business: Business; isOwner: boolean }) {
+  const [state, dispatch, pending] = useActionState(updateBookingPoliciesAction, undefined);
+
+  useEffect(() => {
+    if (state?.success === true) toast.success("Booking policies saved.");
+    else if (state?.success === false) toast.error(state.error || "Failed to save.");
+  }, [state]);
+
+  return (
+    <SectionCard>
+      <SectionHeader
+        icon="solar:shield-check-broken"
+        title="Booking & Payment Policies"
+        description="Default rules for client cancellations and deposit requirements."
+      />
+
+      <form action={dispatch} className="space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <Input
             label="Cancellation Window (Hours)"
             name="cancellation_hours"
@@ -136,7 +207,7 @@ export function BusinessProfileForm({ business, isOwner }: BusinessProfileFormPr
             max="168"
             defaultValue={business.cancellation_hours}
             disabled={!isOwner}
-            hint="Minimum hours before appointment a client can cancel."
+            hint="Minimum hours before an appointment a client can cancel."
             required
           />
 
@@ -151,27 +222,64 @@ export function BusinessProfileForm({ business, isOwner }: BusinessProfileFormPr
             hint="Leave blank if no deposit is required by default."
           />
         </div>
+
+        <SaveRow pending={pending} disabled={!isOwner} />
+      </form>
+    </SectionCard>
+  );
+}
+
+// ─── Section 3: Danger Zone ───────────────────────────────────────────────────
+
+function DangerZone({ isOwner }: { isOwner: boolean }) {
+  if (!isOwner) return null;
+
+  return (
+    <div className="rounded-2xl border border-red-200 dark:border-red-900/50 bg-red-50/40 dark:bg-red-950/20 p-6 space-y-4">
+      <div className="flex items-start gap-3.5">
+        <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-red-600 to-red-400 shadow-sm shadow-red-500/10 flex items-center justify-center shrink-0">
+          <Icon icon="solar:danger-triangle-broken" className="w-5 h-5 text-white" aria-hidden="true" />
+        </div>
+        <div>
+          <h2 className="text-base font-extrabold text-red-700 dark:text-red-400 leading-snug">Danger Zone</h2>
+          <p className="text-xs text-red-600/70 dark:text-red-400/60 mt-0.5 leading-relaxed">
+            These actions are permanent and cannot be undone. Proceed with caution.
+          </p>
+        </div>
       </div>
 
-      {isOwner && (
-        <div className="flex items-center justify-end gap-3">
-          {state?.success === false && (
-            <div className="flex items-center gap-2 text-sm text-destructive">
-              <Icon icon="solar:close-circle-broken" className="w-4 h-4 shrink-0" />
-              {state.error}
-            </div>
-          )}
-          {state?.success === true && (
-            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
-              <Icon icon="solar:check-circle-broken" className="w-4 h-4 shrink-0" />
-              Settings saved successfully!
-            </div>
-          )}
-          <Button type="submit" loading={pending}>
-            Save Settings
-          </Button>
+      <div className="border-t border-red-200 dark:border-red-900/50 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-semibold text-foreground">Delete this business</p>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Permanently remove all data including bookings, invoices, and customers. This cannot be reversed.
+          </p>
         </div>
-      )}
-    </form>
+        <Button
+          type="button"
+          variant="destructive"
+          className="shrink-0 h-9 px-4 text-sm font-bold rounded-xl"
+          onClick={() => {
+            // TODO: wire up delete confirmation dialog
+            toast.error("Contact support to delete your account.");
+          }}
+        >
+          <Icon icon="solar:trash-bin-trash-broken" className="w-4 h-4 mr-1.5" aria-hidden="true" />
+          Delete Business
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Composed export ──────────────────────────────────────────────────────────
+
+export function BusinessProfileForm({ business, isOwner }: BusinessProfileFormProps) {
+  return (
+    <div className="space-y-6">
+      <BusinessIdentityForm business={business} isOwner={isOwner} />
+      <BookingPoliciesForm business={business} isOwner={isOwner} />
+      <DangerZone isOwner={isOwner} />
+    </div>
   );
 }

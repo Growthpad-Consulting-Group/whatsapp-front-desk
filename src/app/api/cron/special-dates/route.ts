@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { whatsappClient } from "@/lib/whatsapp/client";
+import { createWhatsAppClient } from "@/lib/whatsapp/client";
 
 export async function GET(request: NextRequest) {
   return handleCron(request);
@@ -29,7 +29,7 @@ async function handleCron(request: NextRequest) {
     // Fetch all active customers who have a birthday or anniversary today (any year stored)
     const { data: customers, error } = await supabase
       .from("customers")
-      .select("id, name, phone, birthday, anniversary, business_id, businesses(name, currency)")
+      .select("id, name, phone, birthday, anniversary, business_id, businesses(name, currency, whatsapp_phone_number_id, whatsapp_access_token)")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .not("birthday", "is", null) as any;
 
@@ -41,7 +41,7 @@ async function handleCron(request: NextRequest) {
     // Also fetch anniversary customers separately and merge
     const { data: anniversaryCustomers } = await supabase
       .from("customers")
-      .select("id, name, phone, birthday, anniversary, business_id, businesses(name, currency)")
+      .select("id, name, phone, birthday, anniversary, business_id, businesses(name, currency, whatsapp_phone_number_id, whatsapp_access_token)")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .not("anniversary", "is", null) as any;
 
@@ -77,7 +77,10 @@ async function handleCron(request: NextRequest) {
           if (!alreadySent) {
             const msg = `🎂 Happy Birthday, ${c.name}! Wishing you a wonderful day from all of us at ${business.name}. We appreciate your loyalty and hope to see you soon! 🎉`;
             try {
-              await whatsappClient.sendText(c.phone, msg);
+              await createWhatsAppClient(
+                business.whatsapp_phone_number_id ?? "",
+                business.whatsapp_access_token ?? ""
+              ).sendText(c.phone, msg);
               await supabase.from("reminder_sent_log").insert({
                 business_id: c.business_id,
                 trigger: "birthday_annual",
@@ -115,7 +118,10 @@ async function handleCron(request: NextRequest) {
           if (!alreadySent) {
             const msg = `💐 Happy Anniversary, ${c.name}! Thank you for being a valued client at ${business.name}. We hope this special day is everything you deserve! 🥂`;
             try {
-              await whatsappClient.sendText(c.phone, msg);
+              await createWhatsAppClient(
+                business.whatsapp_phone_number_id ?? "",
+                business.whatsapp_access_token ?? ""
+              ).sendText(c.phone, msg);
               await supabase.from("reminder_sent_log").insert({
                 business_id: c.business_id,
                 trigger: "anniversary_annual",

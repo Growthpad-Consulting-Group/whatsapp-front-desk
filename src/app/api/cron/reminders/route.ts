@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { whatsappClient } from "@/lib/whatsapp/client";
+import { createWhatsAppClient } from "@/lib/whatsapp/client";
 import { formatCurrency } from "@/lib/utils";
 
 function fillTemplate(body: string, variables: Record<string, string>): string {
@@ -126,7 +126,11 @@ export async function POST(request: NextRequest) {
 
         try {
           // Send message
-          const { messageId } = await whatsappClient.sendText(customer.phone, outboundBody);
+          const client = createWhatsAppClient(
+            business.whatsapp_phone_number_id ?? "",
+            business.whatsapp_access_token ?? ""
+          );
+          const { messageId } = await client.sendText(customer.phone, outboundBody);
 
           // Log message to DB logs
           await supabase.from("message_logs").insert({

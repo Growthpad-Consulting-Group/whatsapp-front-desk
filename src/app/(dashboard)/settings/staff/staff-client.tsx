@@ -2,14 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { createStaffAction, updateStaffAction, toggleStaffActiveAction, disconnectCalendarAction } from "@/actions/staff";
+import { useTheme } from "next-themes";
+import Select from "react-select";
+import { createStaffAction, updateStaffAction, toggleStaffActiveAction, disconnectCalendarAction, resendStaffInviteAction, deleteStaffAction } from "@/actions/staff";
 import { Button } from "@/components/ui/button";
+import toast from "react-hot-toast";
 import { Input } from "@/components/ui/input";
 import { Icon } from "@iconify/react";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
 import { SimpleModal } from "@/components/common/SimpleModal";
 import { ConfirmModal } from "@/components/common/ConfirmModal";
+import { TooltipButton } from "@/components/ui/TooltipButton";
+import { getSelectStyles } from "@/utils/selectStyles";
 import type { StaffMember } from "@/types";
 
 interface StaffClientProps {
@@ -19,11 +24,15 @@ interface StaffClientProps {
 }
 
 export function StaffClient({ initialStaff, isOwner, currentUserId }: StaffClientProps) {
+  const { resolvedTheme } = useTheme();
   const [staffList, setStaffList] = useState<StaffMember[]>(initialStaff);
   const [isOpen, setIsOpen] = useState(false);
   const [editingStaff, setEditingStaff] = useState<StaffMember | null>(null);
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const [confirmDisconnect, setConfirmDisconnect] = useState<string | null>(null);
+  const [resendingId, setResendingId] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const searchParams = useSearchParams();
 
@@ -31,10 +40,10 @@ export function StaffClient({ initialStaff, isOwner, currentUserId }: StaffClien
     const success = searchParams?.get("success");
     const error = searchParams?.get("error");
     if (success === "calendar-connected") {
-      alert("Google Calendar successfully connected!");
+      toast.success("Google Calendar successfully connected!");
       window.history.replaceState({}, document.title, window.location.pathname);
     } else if (error) {
-      alert(error);
+      toast.error(error);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, [searchParams]);
@@ -79,8 +88,33 @@ export function StaffClient({ initialStaff, isOwner, currentUserId }: StaffClien
     setStaffList((prev) => prev.map((s) => (s.id === id ? { ...s, active: newActive } : s)));
 
     const res = await toggleStaffActiveAction(id, newActive);
-    if (!res.success) {
+    if (res.success) {
+      toast.success(newActive ? "Staff member activated." : "Staff member deactivated.");
+    } else {
       setStaffList((prev) => prev.map((s) => (s.id === id ? { ...s, active: currentActive } : s)));
+      toast.error("Failed to update status.");
+    }
+  };
+
+  const handleResendInvite = async (id: string) => {
+    setResendingId(id);
+    const res = await resendStaffInviteAction(id);
+    setResendingId(null);
+    if (res.success) toast.success("Invite resent successfully.");
+    else toast.error(res.error ?? "Failed to resend invite.");
+  };
+
+  const handleDeleteStaff = async () => {
+    if (!confirmDelete) return;
+    setDeletingId(confirmDelete);
+    setConfirmDelete(null);
+    const res = await deleteStaffAction(confirmDelete);
+    setDeletingId(null);
+    if (res.success) {
+      setStaffList((prev) => prev.filter((s) => s.id !== confirmDelete));
+      toast.success("Staff member removed.");
+    } else {
+      toast.error(res.error ?? "Failed to remove staff member.");
     }
   };
 
@@ -94,6 +128,9 @@ export function StaffClient({ initialStaff, isOwner, currentUserId }: StaffClien
       setStaffList((prev) =>
         prev.map((s) => (s.id === confirmDisconnect ? { ...s, calendar_connected: false } : s))
       );
+      toast.success("Calendar disconnected.");
+    } else {
+      toast.error("Failed to disconnect calendar.");
     }
   };
 
@@ -112,6 +149,7 @@ export function StaffClient({ initialStaff, isOwner, currentUserId }: StaffClien
         setStaffList((prev) =>
           prev.map((s) => (s.id === editingStaff.id ? { ...s, ...payload } : s))
         );
+        toast.success("Staff member updated.");
         setIsOpen(false);
       } else {
         setError(res.error);
@@ -131,6 +169,7 @@ export function StaffClient({ initialStaff, isOwner, currentUserId }: StaffClien
           ...payload,
         };
         setStaffList((prev) => [...prev, newStaff]);
+        toast.success("Staff member added.");
         setIsOpen(false);
       }
     }
@@ -182,27 +221,30 @@ export function StaffClient({ initialStaff, isOwner, currentUserId }: StaffClien
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      <button
+                      <TooltipButton
+                        tooltip={isSelf ? "Cannot deactivate yourself" : staff.active ? "Deactivate" : "Activate"}
+                        icon={staff.active ? "solar:check-circle-broken" : "solar:eye-closed-broken"}
+                        variant={staff.active ? "success" : "ghost"}
                         onClick={() => handleToggleActive(staff.id, staff.active)}
                         disabled={!isOwner || isSelf}
-                        title={isSelf ? "Cannot deactivate yourself" : staff.active ? "Deactivate" : "Activate"}
-                        className={`p-1.5 rounded-lg border transition-colors ${
-                          isSelf
-                            ? "opacity-50 cursor-not-allowed bg-muted border-border text-muted-foreground"
-                            : staff.active
-                            ? "bg-green-50 border-green-200 text-green-700 hover:bg-green-100 dark:bg-green-950/20 dark:border-green-900 dark:text-green-400"
-                            : "bg-muted border-border text-muted-foreground hover:bg-muted/80"
-                        }`}
-                      >
-                        <Icon icon={staff.active ? "solar:check-circle-broken" : "solar:eye-closed-broken"} className="h-3.5 w-3.5" />
-                      </button>
+                        className={isSelf ? "opacity-50 cursor-not-allowed" : ""}
+                      />
                       {isOwner && (
-                        <button
+                        <TooltipButton
+                          tooltip="Edit staff member"
+                          icon="solar:pen-2-broken"
+                          variant="ghost"
                           onClick={() => handleOpenEdit(staff)}
-                          className="p-1.5 rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                        >
-                          <Icon icon="solar:pen-2-broken" className="h-3.5 w-3.5" />
-                        </button>
+                        />
+                      )}
+                      {isOwner && !isSelf && (
+                        <TooltipButton
+                          tooltip="Remove staff member"
+                          icon="solar:trash-bin-minimalistic-broken"
+                          variant="destructive"
+                          onClick={() => setConfirmDelete(staff.id)}
+                          className={deletingId === staff.id ? "opacity-50 pointer-events-none" : ""}
+                        />
                       )}
                     </div>
                   </div>
@@ -218,6 +260,35 @@ export function StaffClient({ initialStaff, isOwner, currentUserId }: StaffClien
                         <span className="font-medium text-foreground">{staff.phone}</span>
                       </div>
                     )}
+                    <div className="flex justify-between items-center">
+                      <span>Account</span>
+                      {staff.user_id ? (
+                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
+                          <Icon icon="solar:check-circle-broken" className="h-3.5 w-3.5" />
+                          Active
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+                            <Icon icon="solar:letter-broken" className="h-3.5 w-3.5" />
+                            Invite pending
+                          </span>
+                          {isOwner && (
+                            <>
+                              <span className="text-muted-foreground font-light">|</span>
+                              <button
+                                type="button"
+                                disabled={resendingId === staff.id}
+                                onClick={() => handleResendInvite(staff.id)}
+                                className="text-xs text-primary hover:underline font-medium focus:outline-none disabled:opacity-50"
+                              >
+                                {resendingId === staff.id ? "Sending…" : "Resend"}
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     <div className="flex justify-between items-center mt-1">
                       <span>Google Calendar</span>
                       <div className="flex items-center gap-2">
@@ -286,16 +357,18 @@ export function StaffClient({ initialStaff, isOwner, currentUserId }: StaffClien
             placeholder="+254712345678"
           />
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="staff_role" className="text-sm font-medium text-foreground">Role</label>
-            <select
-              id="staff_role"
-              value={role}
-              onChange={(e) => setRole(e.target.value as "owner" | "staff")}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            >
-              <option value="staff">Staff (Standard view)</option>
-              <option value="owner">Owner (Full admin rights)</option>
-            </select>
+            <label className="text-sm font-medium text-foreground">Role</label>
+            <Select
+              inputId="staff_role"
+              options={[
+                { value: "staff", label: "Staff (Standard view)" },
+                { value: "owner", label: "Owner (Full admin rights)" },
+              ]}
+              value={{ value: role, label: role === "owner" ? "Owner (Full admin rights)" : "Staff (Standard view)" }}
+              onChange={(opt) => opt && setRole((opt as { value: string }).value as "owner" | "staff")}
+              styles={getSelectStyles(resolvedTheme)}
+              isSearchable={false}
+            />
           </div>
 
           {error && (
@@ -315,6 +388,18 @@ export function StaffClient({ initialStaff, isOwner, currentUserId }: StaffClien
           </div>
         </form>
       </SimpleModal>
+
+      {/* Delete staff confirm */}
+      <ConfirmModal
+        isOpen={!!confirmDelete}
+        onCancel={() => setConfirmDelete(null)}
+        onConfirm={handleDeleteStaff}
+        variant="danger"
+        title="Remove staff member?"
+        description="This will permanently remove them from your team. If they have an active account it will be unlinked. This cannot be undone."
+        confirmLabel="Remove"
+        cancelLabel="Keep"
+      />
 
       {/* Disconnect calendar confirm */}
       <ConfirmModal

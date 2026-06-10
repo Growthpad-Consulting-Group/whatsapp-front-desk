@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { whatsappClient } from "@/lib/whatsapp/client";
+import { createWhatsAppClient } from "@/lib/whatsapp/client";
 import { createInvoiceAction } from "@/actions/invoices";
 import { formatCurrency } from "@/lib/utils";
 
@@ -133,7 +133,10 @@ async function handleCron(request: NextRequest) {
           : `Hi ${customer.name}, here is a friendly reminder that invoice ${inv.invoice_number} for ${formatCurrency(amountOutstanding, business.currency)} ${overdueLabel}. Please view details and complete your payment here: ${invoiceLink} — ${business.name}`;
 
         try {
-          const { messageId } = await whatsappClient.sendText(customer.phone, messageText);
+          const { messageId } = await createWhatsAppClient(
+            business.whatsapp_phone_number_id ?? "",
+            business.whatsapp_access_token ?? ""
+          ).sendText(customer.phone, messageText);
 
           // Log in reminder sent log
           await supabase.from("reminder_sent_log").insert({

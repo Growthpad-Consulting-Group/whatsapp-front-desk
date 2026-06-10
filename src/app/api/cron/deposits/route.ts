@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { whatsappClient } from "@/lib/whatsapp/client";
+import { createWhatsAppClient } from "@/lib/whatsapp/client";
 
 export async function GET(request: NextRequest) {
   return handleCron(request);
@@ -70,7 +70,10 @@ async function handleCron(request: NextRequest) {
       const notifyMessage = `Hi ${customer.name}, your booking request for *${service.name}* has timed out because we did not receive the required deposit within our 15-minute window. Please reply to this chat if you would like to start a new booking. — ${business.name}`;
 
       try {
-        const { messageId } = await whatsappClient.sendText(customer.phone, notifyMessage);
+        const { messageId } = await createWhatsAppClient(
+          business.whatsapp_phone_number_id ?? "",
+          business.whatsapp_access_token ?? ""
+        ).sendText(customer.phone, notifyMessage);
 
         await supabase.from("message_logs").insert({
           business_id: appt.business_id,

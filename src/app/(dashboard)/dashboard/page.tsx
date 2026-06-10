@@ -104,15 +104,26 @@ export default async function DashboardPage() {
     revenue: Array.from({ length: 8 }, (_, i) => revenueByWeek[i] || 0),
   };
 
+  // Heatmap — last 30 days of appointments
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const { data: heatmapAppointments } = await supabase
+    .from("appointments")
+    .select("start_at, status")
+    .eq("business_id", business.id)
+    .gte("start_at", thirtyDaysAgo.toISOString());
+
   return (
     <DashboardClient
       todayAppointments={todayAppointments}
+      heatmapAppointments={heatmapAppointments || []}
       pendingDeposits={pendingDeposits}
       unpaidInvoices={unpaidInvoices}
       overdueInvoices={overdueInvoices}
       recentMessages={recentMessages}
       cancelledCount={cancelledCount}
       staffName={staff.name}
+      staffId={staff.id}
       onboardingSteps={onboardingSteps}
       business={business}
       weeklyBookings={weeklyBookings}

@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { SignupSchema, LoginSchema, MagicLinkSchema } from "@/lib/validations/auth";
 import type { ActionResult } from "@/types";
 
@@ -139,6 +139,21 @@ export async function updatePasswordAction(
   }
 
   redirect("/dashboard");
+}
+
+export async function linkStaffMemberAction(): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Not authenticated." };
+
+  const adminClient = createAdminClient();
+  await adminClient
+    .from("staff_members")
+    .update({ user_id: user.id })
+    .eq("email", user.email!)
+    .is("user_id", null);
+
+  return { success: true, data: undefined };
 }
 
 export async function logoutAction(): Promise<void> {

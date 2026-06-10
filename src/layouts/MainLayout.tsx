@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useTheme } from "next-themes";
 import { Toaster } from "react-hot-toast";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { Footer } from "./Footer";
+import { OfflineIndicator } from "@/components/ui/OfflineIndicator";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -14,18 +14,10 @@ interface MainLayoutProps {
 }
 
 export function MainLayout({ children, businessName, staffName }: MainLayoutProps) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
-    <div
-      className={`flex min-h-screen ${
-        isDark
-          ? "bg-linear-to-br from-gray-900 via-gray-800 to-gray-900"
-          : "bg-linear-to-br from-gray-50 via-blue-50/20 to-gray-50"
-      }`}
-    >
+    <div className="flex min-h-screen bg-linear-to-br from-gray-50 via-blue-50/20 to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Desktop sidebar */}
       <aside
         className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen ml-3"
@@ -50,8 +42,9 @@ export function MainLayout({ children, businessName, staffName }: MainLayoutProp
           {children}
         </main>
         <Footer />
+        <OfflineIndicator />
         <Toaster
-          position="bottom-right"
+          position="top-center"
           toastOptions={{
             duration: 3500,
             style: {
