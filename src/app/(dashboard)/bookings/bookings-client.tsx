@@ -11,6 +11,7 @@ import StatusPill from "@/components/ui/StatusPill";
 import { Tabs } from "@/components/ui/Tabs";
 import { SimpleModal } from "@/components/common/SimpleModal";
 import { ConfirmModal } from "@/components/common/ConfirmModal";
+import { WeekCalendar } from "@/components/ui/WeekCalendar";
 import { Icon } from "@iconify/react";
 import type { Business } from "@/types";
 
@@ -38,6 +39,15 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
   const [selectedService, setSelectedService] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDate, setSelectedDate] = useState("");
+
+  // View mode
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [weekStart, setWeekStart] = useState<Date>(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1)); // Monday
+    return d;
+  });
 
   // Reschedule modal
   const [reschedulingBooking, setReschedulingBooking] = useState<any | null>(null);
@@ -203,14 +213,44 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
               )}
             </div>
           </div>
-          <span className="text-xs text-muted-foreground">Showing {filteredBookings.length} of {bookings.length}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Showing {filteredBookings.length} of {bookings.length}</span>
+            <div className="flex rounded-xl overflow-hidden border border-border">
+              <button
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={cn("px-2.5 py-1.5 text-xs flex items-center gap-1 transition-colors", viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted")}
+              >
+                <Icon icon="solar:list-broken" className="h-3.5 w-3.5" /> List
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("calendar")}
+                className={cn("px-2.5 py-1.5 text-xs flex items-center gap-1 transition-colors border-l border-border", viewMode === "calendar" ? "bg-primary text-primary-foreground" : "bg-background text-muted-foreground hover:bg-muted")}
+              >
+                <Icon icon="solar:calendar-broken" className="h-3.5 w-3.5" /> Week
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
+      {/* Calendar view */}
+      {viewMode === "calendar" && (
+        <WeekCalendar
+          appointments={bookings}
+          weekStart={weekStart}
+          timezone={business.timezone}
+          onPrevWeek={() => { const d = new Date(weekStart); d.setDate(d.getDate() - 7); setWeekStart(d); }}
+          onNextWeek={() => { const d = new Date(weekStart); d.setDate(d.getDate() + 7); setWeekStart(d); }}
+          onAppointmentClick={(appt) => openRescheduleModal(appt)}
+        />
+      )}
+
       {/* Bookings grid */}
-      {filteredBookings.length === 0 ? (
+      {viewMode === "list" && filteredBookings.length === 0 ? (
         <EmptyState icon="solar:calendar-add-broken" title="No bookings found" description="Try adjusting your search or filters." />
-      ) : (
+      ) : viewMode === "list" && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredBookings.map((appt) => {
             const customer = appt.customers || {};

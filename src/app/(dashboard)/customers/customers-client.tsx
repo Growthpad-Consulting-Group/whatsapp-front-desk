@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatCurrency } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
 import StatusPill from "@/components/ui/StatusPill";
 import { AnimatedMetricCard } from "@/components/ui/AnimatedMetricCard";
 import GenericTable, { type TableColumn } from "@/components/ui/GenericTable";
+import { Icon } from "@iconify/react";
 
 interface CustomersClientProps {
   initialCustomers: any[];
@@ -21,6 +22,7 @@ type CustomerRow = {
   phone: string;
   email?: string;
   consent_given: boolean;
+  tags: string[];
   lastBooking: string;
   unpaidBalance: number;
   hasBooked: boolean;
@@ -33,6 +35,7 @@ export function CustomersClient({
   business,
 }: CustomersClientProps) {
   const router = useRouter();
+  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   const customersData = useMemo<CustomerRow[]>(() => {
     return initialCustomers.map((c) => {
@@ -52,9 +55,20 @@ export function CustomersClient({
         0
       );
 
-      return { ...c, lastBooking, unpaidBalance, hasBooked: clientAppts.length > 0 };
+      return { ...c, tags: c.tags ?? [], lastBooking, unpaidBalance, hasBooked: clientAppts.length > 0 };
     });
   }, [initialCustomers, appointments, invoices]);
+
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    customersData.forEach((c) => c.tags.forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [customersData]);
+
+  const filteredData = useMemo(
+    () => activeTag ? customersData.filter((c) => c.tags.includes(activeTag)) : customersData,
+    [customersData, activeTag]
+  );
 
   const metrics = useMemo(() => ({
     total: customersData.length,
@@ -82,10 +96,25 @@ export function CustomersClient({
       render: (row) => <span className="text-muted-foreground font-mono text-xs">{row.phone}</span>,
     },
     {
-      key: "email",
-      header: "Email",
+      key: "tags",
+      header: "Tags",
       hideOnMobile: true,
-      render: (row) => <span className="text-muted-foreground text-xs">{row.email ?? "—"}</span>,
+      render: (row) =>
+        row.tags.length === 0 ? (
+          <span className="text-muted-foreground text-xs">—</span>
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {row.tags.map((t) => (
+              <span
+                key={t}
+                onClick={(e) => { e.stopPropagation(); setActiveTag(activeTag === t ? null : t); }}
+                className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-semibold cursor-pointer hover:bg-primary/20 transition-colors"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        ),
     },
     {
       key: "lastBooking",
@@ -137,7 +166,6 @@ export function CustomersClient({
           icon="solar:users-group-rounded-broken"
           color="blue"
           variant="card"
-          mode="light"
         />
         <AnimatedMetricCard
           title="Active Bookers"
@@ -145,7 +173,6 @@ export function CustomersClient({
           icon="solar:user-check-broken"
           color="green"
           variant="card"
-          mode="light"
         />
         <AnimatedMetricCard
           title="Total Debt Outstanding"
@@ -153,13 +180,44 @@ export function CustomersClient({
           icon="solar:wallet-broken"
           color="red"
           variant="card"
-          mode="light"
         />
       </div>
 
+      {/* Tag filter pills */}
+      {allTags.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-muted-foreground font-medium shrink-0">Filter by tag:</span>
+          {allTags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-[11px] font-semibold transition-colors ${
+                activeTag === tag
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+              }`}
+            >
+              <Icon icon="solar:tag-broken" className="h-3 w-3" />
+              {tag}
+              {activeTag === tag && <Icon icon="solar:close-circle-broken" className="h-3 w-3" />}
+            </button>
+          ))}
+          {activeTag && (
+            <button
+              type="button"
+              onClick={() => setActiveTag(null)}
+              className="text-xs text-muted-foreground hover:text-foreground underline"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      )}
+
       <GenericTable
         columns={columns}
-        data={customersData}
+        data={filteredData}
         keyExtractor={(row) => row.id}
         searchable
         searchPlaceholder="Search by name, phone or email…"
@@ -170,8 +228,8 @@ export function CustomersClient({
         onView={(row) => router.push(`/customers/${row.id}`)}
         fullPageHeight
         emptyIcon="solar:users-group-rounded-broken"
-        emptyTitle="No customers yet"
-        emptyDescription="Customers will appear here once they start booking via WhatsApp."
+        emptyTitle={activeTag ? `No customers tagged "${activeTag}"` : "No customers yet"}
+        emptyDescription={activeTag ? "Try a different tag or clear the filter." : "Customers will appear here once they start booking via WhatsApp."}
       />
     </div>
   );

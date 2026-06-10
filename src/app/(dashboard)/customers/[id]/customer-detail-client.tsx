@@ -4,7 +4,12 @@ import { useState, useEffect } from "react";
 import { formatCurrency, formatDateTime, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { updateCustomerNotesAction, updateCustomerConsentAction } from "@/actions/customers";
+import {
+  updateCustomerNotesAction,
+  updateCustomerConsentAction,
+  updateCustomerTagsAction,
+  updateCustomerSpecialDatesAction,
+} from "@/actions/customers";
 import { Icon } from "@iconify/react";
 import PageHeader from "@/components/ui/PageHeader";
 import { Tabs } from "@/components/ui/Tabs";
@@ -26,15 +31,18 @@ export function CustomerDetailClient({
 }: CustomerDetailClientProps) {
   const [notes, setNotes] = useState(customer.notes || "");
   const [consent, setConsent] = useState(customer.consent_given);
-
+  const [tags, setTags] = useState<string[]>(customer.tags ?? []);
+  const [tagInput, setTagInput] = useState("");
+  const [tagsSaving, setTagsSaving] = useState(false);
+  const [birthday, setBirthday] = useState<string>(customer.birthday ?? "");
+  const [anniversary, setAnniversary] = useState<string>(customer.anniversary ?? "");
+  const [datesSaving, setDatesSaving] = useState(false);
   const [notesLoading, setNotesLoading] = useState(false);
   const [notesFeedback, setNotesFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
   const [consentLoading, setConsentLoading] = useState(false);
   const [consentError, setConsentError] = useState<string | null>(null);
-
   const [activeTab, setActiveTab] = useState("bookings");
 
-  // Clear notes feedback after 3 s
   useEffect(() => {
     if (!notesFeedback) return;
     const t = setTimeout(() => setNotesFeedback(null), 3000);
@@ -46,6 +54,31 @@ export function CustomerDetailClient({
     completed: "outline", no_show: "destructive",
     draft: "outline", sent: "warning", due: "warning",
     overdue: "destructive", partially_paid: "default", paid: "success", disputed: "destructive",
+  };
+
+  const handleAddTag = async (raw: string) => {
+    const tag = raw.trim().toLowerCase().replace(/\s+/g, "-");
+    if (!tag || tags.includes(tag)) { setTagInput(""); return; }
+    const next = [...tags, tag];
+    setTags(next);
+    setTagInput("");
+    setTagsSaving(true);
+    await updateCustomerTagsAction(customer.id, next);
+    setTagsSaving(false);
+  };
+
+  const handleRemoveTag = async (tag: string) => {
+    const next = tags.filter((t) => t !== tag);
+    setTags(next);
+    setTagsSaving(true);
+    await updateCustomerTagsAction(customer.id, next);
+    setTagsSaving(false);
+  };
+
+  const handleSaveDates = async () => {
+    setDatesSaving(true);
+    await updateCustomerSpecialDatesAction(customer.id, birthday || null, anniversary || null);
+    setDatesSaving(false);
   };
 
   const handleSaveNotes = async () => {
@@ -64,11 +97,8 @@ export function CustomerDetailClient({
     const nextConsent = !consent;
     const res = await updateCustomerConsentAction(customer.id, nextConsent);
     setConsentLoading(false);
-    if (res.success) {
-      setConsent(nextConsent);
-    } else {
-      setConsentError(res.error || "Failed to update consent status.");
-    }
+    if (res.success) setConsent(nextConsent);
+    else setConsentError(res.error || "Failed to update consent status.");
   };
 
   const detailTabs = [
@@ -101,7 +131,7 @@ export function CustomerDetailClient({
               {customer.email && <p className="text-xs text-muted-foreground mt-0.5">{customer.email}</p>}
             </div>
 
-            {/* Consent and details */}
+            {/* Consent */}
             <div className="space-y-3 text-xs leading-normal">
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground font-semibold">Message Consent</span>
@@ -119,16 +149,74 @@ export function CustomerDetailClient({
                   {consentLoading ? "Saving…" : consent ? "Allowed" : "No Consent"}
                 </button>
               </div>
-              {consentError && (
-                <p className="text-[11px] text-destructive">{consentError}</p>
-              )}
+              {consentError && <p className="text-[11px] text-destructive">{consentError}</p>}
               <div className="flex justify-between">
                 <span className="text-muted-foreground font-semibold">Client Registered</span>
                 <span className="text-foreground">{new Date(customer.created_at).toLocaleDateString("en-GB")}</span>
               </div>
             </div>
 
-            {/* Notes editor */}
+            {/* Tags */}
+            <div className="space-y-3 pt-3 border-t border-border/40">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Tags</span>
+                {tagsSaving && <Icon icon="solar:spinner-broken" className="h-3 w-3 animate-spin text-muted-foreground" />}
+              </div>
+              <div className="flex flex-wrap gap-1.5 min-h-6">
+                {tags.map((tag) => (
+                  <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20 text-[10px] font-semibold">
+                    {tag}
+                    <button type="button" onClick={() => handleRemoveTag(tag)} className="hover:text-destructive transition-colors" aria-label={`Remove ${tag}`}>
+                      <Icon icon="solar:close-circle-broken" className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+                {tags.length === 0 && <span className="text-[10px] text-muted-foreground italic">No tags yet</span>}
+              </div>
+              <input
+                type="text"
+                placeholder="Add tag and press Enter…"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAddTag(tagInput); } }}
+                onBlur={() => { if (tagInput.trim()) handleAddTag(tagInput); }}
+                className="h-8 w-full rounded-lg border border-border bg-background px-3 text-[11px] focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+
+            {/* Special Dates */}
+            <div className="space-y-3 pt-3 border-t border-border/40">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">Special Dates</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
+                    <Icon icon="solar:gift-broken" className="h-3 w-3" /> Birthday
+                  </label>
+                  <input
+                    type="date"
+                    value={birthday}
+                    onChange={(e) => setBirthday(e.target.value)}
+                    className="h-8 w-full rounded-lg border border-border bg-background px-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
+                    <Icon icon="solar:heart-broken" className="h-3 w-3" /> Anniversary
+                  </label>
+                  <input
+                    type="date"
+                    value={anniversary}
+                    onChange={(e) => setAnniversary(e.target.value)}
+                    className="h-8 w-full rounded-lg border border-border bg-background px-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+              <Button size="sm" variant="secondary" onClick={handleSaveDates} loading={datesSaving} className="w-full text-xs">
+                Save Dates
+              </Button>
+            </div>
+
+            {/* Notes */}
             <div className="space-y-3 pt-3 border-t border-border/40">
               <label htmlFor="crm_notes" className="text-xs font-bold text-muted-foreground uppercase tracking-wider block">
                 Client Notes
@@ -146,9 +234,9 @@ export function CustomerDetailClient({
               </Button>
               {notesFeedback && (
                 <p className={cn("text-[11px] font-medium", notesFeedback.ok ? "text-green-600 dark:text-green-400" : "text-destructive")}>
-                  {notesFeedback.ok ? (
-                    <span className="flex items-center gap-1"><Icon icon="solar:check-circle-broken" className="h-3.5 w-3.5" />{notesFeedback.msg}</span>
-                  ) : notesFeedback.msg}
+                  {notesFeedback.ok
+                    ? <span className="flex items-center gap-1"><Icon icon="solar:check-circle-broken" className="h-3.5 w-3.5" />{notesFeedback.msg}</span>
+                    : notesFeedback.msg}
                 </p>
               )}
             </div>
@@ -180,18 +268,9 @@ export function CustomerDetailClient({
                             <Badge variant={statusColors[appt.status] || "default"}>{appt.status}</Badge>
                           </div>
                           <div className="space-y-1.5 text-xs text-muted-foreground">
-                            <p className="flex justify-between">
-                              <span>Time</span>
-                              <span className="font-medium text-foreground">{formatDateTime(appt.start_at, business.timezone)}</span>
-                            </p>
-                            <p className="flex justify-between">
-                              <span>Assigned Staff</span>
-                              <span className="font-medium text-foreground">{staff.name || "N/A"}</span>
-                            </p>
-                            <p className="flex justify-between">
-                              <span>Payment Status</span>
-                              <span className="font-medium text-foreground uppercase tracking-wide text-[10px]">{appt.payment_status}</span>
-                            </p>
+                            <p className="flex justify-between"><span>Time</span><span className="font-medium text-foreground">{formatDateTime(appt.start_at, business.timezone)}</span></p>
+                            <p className="flex justify-between"><span>Assigned Staff</span><span className="font-medium text-foreground">{staff.name || "N/A"}</span></p>
+                            <p className="flex justify-between"><span>Payment Status</span><span className="font-medium text-foreground uppercase tracking-wide text-[10px]">{appt.payment_status}</span></p>
                           </div>
                         </div>
                       );
@@ -221,26 +300,12 @@ export function CustomerDetailClient({
                               <Badge variant={statusColors[inv.status] || "default"}>{inv.status}</Badge>
                             </div>
                             <div className="space-y-1 text-xs text-muted-foreground">
-                              <p className="flex justify-between">
-                                <span>Due Date</span>
-                                <span className="font-medium text-foreground">{inv.due_date}</span>
-                              </p>
-                              <p className="flex justify-between">
-                                <span>Paid Amount</span>
-                                <span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(Number(inv.amount_paid), inv.currency)}</span>
-                              </p>
-                              <p className="flex justify-between">
-                                <span>Total Net Due</span>
-                                <span className="font-semibold text-foreground">{formatCurrency(outstanding, inv.currency)}</span>
-                              </p>
+                              <p className="flex justify-between"><span>Due Date</span><span className="font-medium text-foreground">{inv.due_date}</span></p>
+                              <p className="flex justify-between"><span>Paid Amount</span><span className="font-medium text-green-600 dark:text-green-400">{formatCurrency(Number(inv.amount_paid), inv.currency)}</span></p>
+                              <p className="flex justify-between"><span>Total Net Due</span><span className="font-semibold text-foreground">{formatCurrency(outstanding, inv.currency)}</span></p>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => window.open(`/invoice/${inv.id}`, "_blank")}
-                            className="w-full flex items-center justify-center gap-1 border border-border text-xs text-foreground hover:bg-muted"
-                          >
+                          <Button variant="ghost" size="sm" onClick={() => window.open(`/invoice/${inv.id}`, "_blank")} className="w-full flex items-center justify-center gap-1 border border-border text-xs text-foreground hover:bg-muted">
                             <Icon icon="solar:eye-broken" className="h-3.5 w-3.5" /> View Receipt
                           </Button>
                         </div>
@@ -264,31 +329,19 @@ export function CustomerDetailClient({
                     {messages.map((msg) => {
                       const isInbound = msg.direction === "inbound";
                       return (
-                        <div
-                          key={msg.id}
-                          className={cn(
-                            "flex flex-col max-w-[80%] rounded-2xl p-3 text-xs leading-relaxed border relative shadow-sm",
-                            isInbound
-                              ? "bg-muted/50 border-border/40 text-foreground self-start rounded-tl-none"
-                              : "bg-primary/5 border-primary/20 text-foreground self-end rounded-tr-none"
-                          )}
-                        >
+                        <div key={msg.id} className={cn(
+                          "flex flex-col max-w-[80%] rounded-2xl p-3 text-xs leading-relaxed border relative shadow-sm",
+                          isInbound
+                            ? "bg-muted/50 border-border/40 text-foreground self-start rounded-tl-none"
+                            : "bg-primary/5 border-primary/20 text-foreground self-end rounded-tr-none"
+                        )}>
                           <p>{msg.content_summary}</p>
                           <div className="flex items-center gap-1 mt-1.5 self-end text-[9px] text-muted-foreground">
                             <span>{new Date(msg.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}</span>
                             {!isInbound && (
                               <Icon
-                                icon={
-                                  msg.status === "read" ? "mdi:check-all"
-                                    : msg.status === "delivered" ? "mdi:check"
-                                    : msg.status === "failed" ? "mdi:alert-circle-outline"
-                                    : "mdi:clock-outline"
-                                }
-                                className={cn(
-                                  "h-3.5 w-3.5",
-                                  msg.status === "read" && "text-blue-500",
-                                  msg.status === "failed" && "text-destructive"
-                                )}
+                                icon={msg.status === "read" ? "mdi:check-all" : msg.status === "delivered" ? "mdi:check" : msg.status === "failed" ? "mdi:alert-circle-outline" : "mdi:clock-outline"}
+                                className={cn("h-3.5 w-3.5", msg.status === "read" && "text-blue-500", msg.status === "failed" && "text-destructive")}
                               />
                             )}
                           </div>

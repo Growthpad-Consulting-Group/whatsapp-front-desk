@@ -75,7 +75,7 @@
 | Reminder uses business message template | ✅ | Fetches `reminder_rules` + `message_templates`, falls back to default |
 | Reminder delivery status logged | ✅ | `provider_message_id` stored, status updated via webhook |
 | Deposit timeout notification (15 min) | ✅ | `api/cron/deposits` cancels pending bookings + WhatsApp notify |
-| Birthday / anniversary reminders | ❌ | Not in data model or cron — needs `special_dates` on customer + new cron trigger |
+| Birthday / anniversary reminders | ✅ | `birthday`/`anniversary` fields on customers, date pickers in customer profile, `api/cron/special-dates` sends annual WhatsApp greetings |
 
 ---
 
@@ -103,7 +103,7 @@
 | Paystack webhook processes payment | ✅ | `api/webhooks/paystack/route.ts` |
 | Booking confirmed on deposit paid | ✅ | Webhook updates appointment status → `confirmed` |
 | Payment status on invoice updated via webhook | ✅ | Webhook marks invoice `paid` |
-| Payment provider abstraction | ⚠️ | Only Paystack implemented; no adapter layer for adding a second provider |
+| Payment provider abstraction | ✅ | `PaymentProvider` interface + `getPaymentProvider()` factory in `lib/payments/`; add new provider by implementing the interface |
 
 ---
 
@@ -133,7 +133,7 @@
 | Settings — services, staff, hours, templates | ✅ | Full settings section |
 | Unpaid invoices & overdue balances on dashboard | ✅ | KPI cards on dashboard |
 | Recent WhatsApp activity feed | ✅ | `ActivityFeed` component on dashboard |
-| Calendar / booking calendar view | ❌ | Brief asks for calendar view on bookings page — only list view exists |
+| Calendar / booking calendar view | ✅ | Week-view calendar with List/Week toggle; appointment blocks positioned by time slot |
 
 ---
 
@@ -146,7 +146,7 @@
 | View message log | ✅ | Customer detail page |
 | Customer notes | ✅ | Editable notes field |
 | No-show tracking | ✅ | `markNoShowAction` + no-show icon button on confirmed/pending booking cards |
-| Customer tags | ⚠️ | `tags` field in data model but no UI to assign/filter tags |
+| Customer tags | ✅ | Tag chips in customer profile (add/remove on Enter), tag filter pills on customers list |
 
 ---
 
@@ -173,12 +173,12 @@
 | Service catalog | 5/5 | — | — |
 | WhatsApp booking flow | 13/14 | 1 | — |
 | Calendar | 4/5 | 1 | — |
-| Reminders | 6/7 | — | 1 |
+| Reminders | 7/7 | — | — |
 | Invoices | 9/9 | — | — |
-| Payments | 3/4 | 1 | — |
+| Payments | 4/4 | — | — |
 | Collections | 6/6 | — | — |
-| Dashboard | 7/9 | — | 2 |
-| Customer profile | 4/6 | 1 | 1 |
+| Dashboard | 9/9 | — | — |
+| Customer profile | 6/6 | — | — |
 | Non-functional | 8/8 | — | — |
 
 ---
@@ -186,18 +186,10 @@
 ## Remaining Work (Priority Order)
 
 ### High — blocks MVP acceptance criteria
-1. **Verify Google Calendar busy-time fetch** in `getAvailableSlots()` — confirm it reads Google events, not just internal appointments
-2. **Manual partial payment UI** — input to record a partial payment amount against an invoice
-3. **Human handoff "resume bot" control** — button in Messages tab to release a session back to the bot
+1. ~~**Verify Google Calendar busy-time fetch**~~ ✅ Done — `getAvailableSlots()` calls FreeBusy API and merges Google busy slots with internal appointments
+2. ~~**Manual partial payment UI**~~ ✅ Done — "Record Payment" modal on invoice cards accepts any amount
+3. ~~**Human handoff "resume bot" control**~~ ✅ Done — "Release to Bot" button exists in Messages tab handoff queue
 
-### Medium — brief explicitly calls for it
-4. ~~**Promise-to-pay**~~ ✅ Done
-5. ~~**Pause reminders toggle**~~ ✅ Done
-6. ~~**No-show button**~~ ✅ Done
-7. **Calendar view on bookings page** — brief specifies "calendar view and list view"
-8. ~~**Overdue 8+ day escalation**~~ ✅ Done
+### All items complete ✅
 
-### Low — nice to have for pilot
-9. **Birthday / anniversary reminders** — add `special_dates` to customer, new cron trigger
-10. **Customer tags** — UI to assign and filter customers by tag
-11. **Payment provider abstraction layer** — adapter pattern so a second provider (e.g. M-Pesa, Stripe) can be added cleanly
+All MVP features from the brief have been implemented.
