@@ -168,7 +168,7 @@ function SimpleModalInner({
             >
               {/* Header */}
               {(title || rightElement) && (
-                <div className="flex items-center gap-3 px-5 py-4 border-b border-border/60 shrink-0">
+                <div className="flex items-center gap-3 px-5 py-4 bg-slate-100 dark:bg-slate-900 border-b border-border/60 shrink-0">
                   {title && (
                     <>
                       <div className={cn("w-9 h-9 rounded-xl border flex items-center justify-center shrink-0", VARIANT_ACCENT[variant])}>

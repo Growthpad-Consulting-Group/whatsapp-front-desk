@@ -25,49 +25,49 @@ interface TemplatesClientProps {
 }
 
 const TEMPLATE_TYPES = [
-  { type: "booking_confirmed",    label: "Booking Confirmation",      icon: "solar:check-square-broken",        category: "Booking" },
-  { type: "deposit_request",      label: "Deposit Request",           icon: "solar:wallet-money-broken",        category: "Booking" },
-  { type: "24h_before",           label: "24-Hour Reminder",          icon: "solar:bell-bing-broken",           category: "Booking" },
-  { type: "2h_before",            label: "2-Hour Reminder",           icon: "solar:clock-circle-broken",        category: "Booking" },
-  { type: "invoice_sent",         label: "Invoice Sent",              icon: "solar:document-text-broken",       category: "Invoice" },
-  { type: "invoice_due",          label: "Invoice Due",               icon: "solar:calendar-date-broken",       category: "Invoice" },
-  { type: "invoice_overdue_1_3",  label: "Invoice Overdue (1–3 Days)", icon: "solar:danger-triangle-broken",   category: "Invoice" },
-  { type: "invoice_overdue_4_7",  label: "Invoice Overdue (4–7 Days)", icon: "solar:danger-circle-broken",     category: "Invoice" },
+  { type: "booking_confirmed", label: "Booking Confirmation", icon: "solar:check-square-broken", category: "Booking" },
+  { type: "deposit_request", label: "Deposit Request", icon: "solar:wallet-money-broken", category: "Booking" },
+  { type: "24h_before", label: "24-Hour Reminder", icon: "solar:bell-bing-broken", category: "Booking" },
+  { type: "2h_before", label: "2-Hour Reminder", icon: "solar:clock-circle-broken", category: "Booking" },
+  { type: "invoice_sent", label: "Invoice Sent", icon: "solar:document-text-broken", category: "Invoice" },
+  { type: "invoice_due", label: "Invoice Due", icon: "solar:calendar-date-broken", category: "Invoice" },
+  { type: "invoice_overdue_1_3", label: "Invoice Overdue (1–3 Days)", icon: "solar:danger-triangle-broken", category: "Invoice" },
+  { type: "invoice_overdue_4_7", label: "Invoice Overdue (4–7 Days)", icon: "solar:danger-circle-broken", category: "Invoice" },
 ];
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
-  booking_confirmed:   "Hi {{customer_name}}! Your booking for *{{service_name}}* is confirmed for {{date}} at {{time}}. Reply *R* to reschedule or *C* to cancel. — {{business_name}}",
-  deposit_request:     "Hi {{customer_name}}, to secure your booking for *{{service_name}}* on {{date}} at {{time}}, please pay the deposit of *{{amount}}* here: {{payment_link}} — {{business_name}}",
-  "24h_before":        "Hi {{customer_name}}, this is a friendly reminder that you have an upcoming appointment for *{{service_name}}* tomorrow at {{time}}. Reply *R* to reschedule or *C* to cancel. — {{business_name}}",
-  "2h_before":         "Hi {{customer_name}}, this is a friendly reminder that your appointment for *{{service_name}}* is today at {{time}}. We look forward to seeing you! — {{business_name}}",
-  invoice_sent:        "Hi {{customer_name}}, here is your invoice {{invoice_number}} for {{amount}} due on {{due_date}}. View and pay here: {{invoice_link}} — {{business_name}}",
-  invoice_due:         "Hi {{customer_name}}, this is a reminder that invoice {{invoice_number}} for {{amount}} is due today. View and pay here: {{invoice_link}} — {{business_name}}",
+  booking_confirmed: "Hi {{customer_name}}! Your booking for *{{service_name}}* is confirmed for {{date}} at {{time}}. Reply *R* to reschedule or *C* to cancel. — {{business_name}}",
+  deposit_request: "Hi {{customer_name}}, to secure your booking for *{{service_name}}* on {{date}} at {{time}}, please pay the deposit of *{{amount}}* here: {{payment_link}} — {{business_name}}",
+  "24h_before": "Hi {{customer_name}}, this is a friendly reminder that you have an upcoming appointment for *{{service_name}}* tomorrow at {{time}}. Reply *R* to reschedule or *C* to cancel. — {{business_name}}",
+  "2h_before": "Hi {{customer_name}}, this is a friendly reminder that your appointment for *{{service_name}}* is today at {{time}}. We look forward to seeing you! — {{business_name}}",
+  invoice_sent: "Hi {{customer_name}}, here is your invoice {{invoice_number}} for {{amount}} due on {{due_date}}. View and pay here: {{invoice_link}} — {{business_name}}",
+  invoice_due: "Hi {{customer_name}}, this is a reminder that invoice {{invoice_number}} for {{amount}} is due today. View and pay here: {{invoice_link}} — {{business_name}}",
   invoice_overdue_1_3: "Hi {{customer_name}}, this is a friendly reminder that invoice {{invoice_number}} for {{amount}} is overdue. Please complete your payment here: {{invoice_link}} — {{business_name}}",
   invoice_overdue_4_7: "Hi {{customer_name}}, invoice {{invoice_number}} for {{amount}} is overdue. Please let us know when you can complete payment or click here: {{invoice_link}} — {{business_name}}",
 };
 
 const VARIABLES = [
-  { name: "{{business_name}}",  desc: "Your business name" },
-  { name: "{{customer_name}}",  desc: "Client's full name" },
-  { name: "{{service_name}}",   desc: "Booked service description" },
-  { name: "{{date}}",           desc: "Local booking date" },
-  { name: "{{time}}",           desc: "Local booking start time" },
-  { name: "{{amount}}",         desc: "Deposit or payment amount" },
-  { name: "{{payment_link}}",   desc: "Paystack transaction URL" },
-  { name: "{{invoice_link}}",   desc: "Public invoice receipt URL" },
+  { name: "{{business_name}}", desc: "Your business name" },
+  { name: "{{customer_name}}", desc: "Client's full name" },
+  { name: "{{service_name}}", desc: "Booked service description" },
+  { name: "{{date}}", desc: "Local booking date" },
+  { name: "{{time}}", desc: "Local booking start time" },
+  { name: "{{amount}}", desc: "Deposit or payment amount" },
+  { name: "{{payment_link}}", desc: "Paystack transaction URL" },
+  { name: "{{invoice_link}}", desc: "Public invoice receipt URL" },
   { name: "{{invoice_number}}", desc: "Invoice reference number" },
-  { name: "{{due_date}}",       desc: "Invoice due date" },
+  { name: "{{due_date}}", desc: "Invoice due date" },
 ];
 
 const STATUS_STYLE: Record<string, string> = {
-  local:    "text-blue-600 bg-blue-500/10 border-blue-500/20",
-  pending:  "text-yellow-600 bg-yellow-500/10 border-yellow-500/20",
+  local: "text-blue-600 bg-blue-500/10 border-blue-500/20",
+  pending: "text-yellow-600 bg-yellow-500/10 border-yellow-500/20",
   approved: "text-green-600 bg-green-500/10 border-green-500/20",
   rejected: "text-red-500 bg-red-500/10 border-red-500/20",
 };
 const STATUS_LABEL: Record<string, string> = {
-  local:    "Draft",
-  pending:  "Pending",
+  local: "Draft",
+  pending: "Pending",
   approved: "Active",
   rejected: "Rejected",
 };
@@ -110,16 +110,16 @@ function EditorModal({ row, business, onClose, onSaved }: EditorModalProps) {
 
   const livePreview = useMemo(() => {
     const dummyVals: Record<string, string> = {
-      business_name:  business.name || "Apex Wellness",
-      customer_name:  "Sarah Jenkins",
-      service_name:   "Premium Aromatherapy Massage",
-      date:           "09/06/2026",
-      time:           "10:30 AM",
-      amount:         "KES 3,500.00",
-      payment_link:   "https://checkout.paystack.co/demo_link",
-      invoice_link:   `${process.env.NEXT_PUBLIC_APP_URL || ""}/invoice/demo_id`,
+      business_name: business.name || "Apex Wellness",
+      customer_name: "Sarah Jenkins",
+      service_name: "Premium Aromatherapy Massage",
+      date: "09/06/2026",
+      time: "10:30 AM",
+      amount: "KES 3,500.00",
+      payment_link: "https://checkout.paystack.co/demo_link",
+      invoice_link: `${process.env.NEXT_PUBLIC_APP_URL || ""}/invoice/demo_id`,
       invoice_number: "INV-01205",
-      due_date:       "10/06/2026",
+      due_date: "10/06/2026",
     };
     let out = body;
     for (const [k, v] of Object.entries(dummyVals)) {
@@ -179,59 +179,59 @@ function EditorModal({ row, business, onClose, onSaved }: EditorModalProps) {
       <div className="flex min-h-130 max-h-[82vh]">
 
         {/* ── Left panel — gradient + WhatsApp preview ── */}
-        <div className="hidden md:flex flex-col w-92 shrink-0 bg-linear-to-br from-[#075E54] via-[#128C7E] to-[#25D366] rounded-l-3xl p-6 overflow-y-auto">
+        <div className="hidden md:flex flex-col w-92 shrink-0 bg-slate-50 dark:bg-slate-900/40 border-r border-border/60 rounded-l-3xl p-6 overflow-y-auto">
           {/* Header */}
           <div className="mb-6">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center mb-3">
-              <Icon icon={row?.icon ?? "solar:document-text-broken"} className="h-5 w-5 text-white" />
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mb-3">
+              <Icon icon={row?.icon ?? "solar:document-text-broken"} className="h-5 w-5 text-primary" />
             </div>
-            <h3 className="text-sm font-bold text-white leading-snug">{row?.label ?? ""}</h3>
-            <p className="text-[11px] text-white/60 mt-0.5">{row?.category} trigger</p>
+            <h3 className="text-sm font-bold text-foreground leading-snug">{row?.label ?? ""}</h3>
+            <p className="text-[11px] text-muted-foreground mt-0.5">{row?.category} trigger</p>
           </div>
 
           {/* Status pill */}
           <div className={cn(
             "inline-flex items-center gap-1.5 self-start px-2.5 py-1 rounded-lg text-[10px] font-bold border mb-6",
-            status === "approved" ? "bg-green-500/20 border-green-400/30 text-green-200"
-            : status === "pending"  ? "bg-yellow-500/20 border-yellow-400/30 text-yellow-200"
-            : status === "rejected" ? "bg-red-500/20 border-red-400/30 text-red-200"
-            : "bg-white/15 border-white/20 text-white/70"
+            status === "approved" ? "bg-green-500/10 border-green-500/20 text-green-600 dark:text-green-400"
+              : status === "pending" ? "bg-yellow-500/10 border-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                : status === "rejected" ? "bg-red-500/10 border-red-500/20 text-red-500"
+                  : "bg-muted/60 border-border text-muted-foreground"
           )}>
             <Icon icon={
               status === "approved" ? "solar:check-circle-broken"
-              : status === "pending" ? "solar:clock-circle-broken"
-              : status === "rejected" ? "solar:close-circle-broken"
-              : "solar:pen-broken"
+                : status === "pending" ? "solar:clock-circle-broken"
+                  : status === "rejected" ? "solar:close-circle-broken"
+                    : "solar:pen-broken"
             } className="h-3 w-3" />
             {STATUS_LABEL[status]}
           </div>
 
           {/* WhatsApp phone mockup */}
           <div className="flex-1 flex flex-col">
-            <p className="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-3">Live Preview</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Live Preview</p>
 
             {/* Phone frame */}
-            <div className="bg-[#0a1929] rounded-2xl p-3 flex flex-col gap-2 border border-white/10 shadow-xl">
+            <div className="bg-background border border-border shadow-md rounded-2xl p-3 flex flex-col gap-2">
               {/* Chat header */}
-              <div className="flex items-center gap-2 pb-2 border-b border-white/10">
-                <div className="w-6 h-6 rounded-full bg-primary/50 flex items-center justify-center text-[9px] font-bold text-white">
+              <div className="flex items-center gap-2 pb-2 border-b border-border">
+                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold text-primary">
                   {(row?.label ?? "W").charAt(0)}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-white leading-none">Booking Bot</p>
-                  <p className="text-[8px] text-green-400">online</p>
+                  <p className="text-xs font-bold text-foreground leading-none">Booking Bot</p>
+                  <p className="text-[10px] text-green-600 dark:text-green-400">online</p>
                 </div>
               </div>
 
               {/* Message bubble */}
               <div className="flex justify-start">
-                <div className="bg-[#1e2f3e] rounded-2xl rounded-tl-none px-3 py-2 max-w-[90%] shadow-sm">
-                  <p className="text-xs text-white/90 leading-relaxed whitespace-pre-wrap wrap-break-word">
-                    {livePreview || <span className="text-white/30 italic">Message preview…</span>}
+                <div className="bg-[#E2F9CD] dark:bg-[#054640] rounded-2xl rounded-tl-none px-3 py-2 max-w-[90%] shadow-xs">
+                  <p className="text-xs text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-wrap wrap-break-word font-sans">
+                    {livePreview || <span className="text-slate-400/70 italic">Message preview…</span>}
                   </p>
                   <div className="flex items-center justify-end gap-1 mt-1">
-                    <span className="text-[8px] text-white/30">10:30 AM</span>
-                    <Icon icon="solar:double-alt-check-broken" className="h-3 w-3 text-primary/70" />
+                    <span className="text-[8px] text-slate-500/80 dark:text-slate-400/80">10:30 AM</span>
+                    <Icon icon="solar:double-alt-check-broken" className="h-3 w-3 text-sky-600 dark:text-sky-400" />
                   </div>
                 </div>
               </div>
@@ -239,8 +239,8 @@ function EditorModal({ row, business, onClose, onSaved }: EditorModalProps) {
 
             {/* WhatsApp badge */}
             <div className="flex items-center gap-1.5 mt-4">
-              <Icon icon="mdi:whatsapp" className="h-3.5 w-3.5 text-green-400" />
-              <span className="text-[10px] text-white/50 font-medium">WhatsApp Business</span>
+              <Icon icon="mdi:whatsapp" className="h-3.5 w-3.5 text-green-500" />
+              <span className="text-[10px] text-muted-foreground font-medium">WhatsApp Business</span>
             </div>
           </div>
         </div>
@@ -318,14 +318,14 @@ export function TemplatesClient({ initialTemplates, business }: TemplatesClientP
   const rows: TemplateRow[] = useMemo(() => TEMPLATE_TYPES.map((t) => {
     const saved = templates.find((s) => s.type === t.type);
     return {
-      type:            t.type,
-      label:           t.label,
-      icon:            t.icon,
-      category:        t.category,
-      body:            saved?.body ?? DEFAULT_TEMPLATES[t.type] ?? "",
+      type: t.type,
+      label: t.label,
+      icon: t.icon,
+      category: t.category,
+      body: saved?.body ?? DEFAULT_TEMPLATES[t.type] ?? "",
       approval_status: saved?.approval_status ?? "local",
-      isCustom:        !!saved,
-      id:              saved?.id ?? "",
+      isCustom: !!saved,
+      id: saved?.id ?? "",
     };
   }), [templates]);
 
@@ -337,10 +337,10 @@ export function TemplatesClient({ initialTemplates, business }: TemplatesClientP
     // Update editingRow status in-place so modal reflects new state
     setEditingRow((prev) => prev ? {
       ...prev,
-      id:              updated.id,
-      body:            updated.body,
+      id: updated.id,
+      body: updated.body,
       approval_status: updated.approval_status,
-      isCustom:        true,
+      isCustom: true,
     } : null);
   };
 

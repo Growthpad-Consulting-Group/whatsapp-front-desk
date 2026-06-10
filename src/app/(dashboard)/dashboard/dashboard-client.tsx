@@ -49,7 +49,7 @@ export function DashboardClient({
   revenueData,
   heatmapAppointments = [],
 }: DashboardClientProps) {
-  
+
   // Helper to get initials
   const getInitials = (name?: string) => {
     if (!name) return "?";
@@ -117,7 +117,7 @@ export function DashboardClient({
 
   return (
     <div className="space-y-6">
-      
+
       {/* Greetings & Time */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-5">
         <div>
@@ -146,7 +146,7 @@ export function DashboardClient({
       {!onboardingMetrics.done && (
         <div className="relative overflow-hidden bg-primary/5 border border-primary/20 rounded-3xl p-6 shadow-sm">
           <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -z-10" />
-          
+
           <div className="flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
             <div className="space-y-2 flex-1">
               <div className="flex items-center gap-2">
@@ -156,7 +156,7 @@ export function DashboardClient({
               <p className="text-xs text-muted-foreground leading-relaxed max-w-xl">
                 Set up these vital business configurations to enable your state machine and WhatsApp bot engine to handle slot bookings automatically.
               </p>
-              
+
               {/* Progress bar */}
               <div className="pt-2 max-w-md">
                 <div className="flex justify-between text-xs font-semibold text-foreground mb-1.5">
@@ -357,7 +357,7 @@ export function DashboardClient({
                         {/* Status badge & Hover actions */}
                         <div className="flex items-center gap-2.5 shrink-0">
                           {getAppointmentBadge(appt)}
-                          
+
                           {/* Quick Actions (Reveal on list item hover) */}
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-250">
                             {appt.customers?.phone && (
