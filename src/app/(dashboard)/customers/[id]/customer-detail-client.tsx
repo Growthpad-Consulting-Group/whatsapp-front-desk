@@ -13,6 +13,7 @@ import {
 import { Icon } from "@iconify/react";
 import PageHeader from "@/components/ui/PageHeader";
 import { Tabs } from "@/components/ui/Tabs";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 interface CustomerDetailClientProps {
   customer: any;
@@ -192,23 +193,13 @@ export function CustomerDetailClient({
                   <label className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
                     <Icon icon="solar:gift-broken" className="h-3 w-3" /> Birthday
                   </label>
-                  <input
-                    type="date"
-                    value={birthday}
-                    onChange={(e) => setBirthday(e.target.value)}
-                    className="h-8 w-full rounded-lg border border-border bg-background px-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
+                  <DatePicker value={birthday} onChange={setBirthday} placeholder="Pick date" popoverWidth={260} />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[10px] font-semibold text-muted-foreground flex items-center gap-1">
                     <Icon icon="solar:heart-broken" className="h-3 w-3" /> Anniversary
                   </label>
-                  <input
-                    type="date"
-                    value={anniversary}
-                    onChange={(e) => setAnniversary(e.target.value)}
-                    className="h-8 w-full rounded-lg border border-border bg-background px-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
+                  <DatePicker value={anniversary} onChange={setAnniversary} placeholder="Pick date" popoverWidth={260} />
                 </div>
               </div>
               <Button size="sm" variant="secondary" onClick={handleSaveDates} loading={datesSaving} className="w-full text-xs">

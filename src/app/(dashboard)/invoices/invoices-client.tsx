@@ -10,6 +10,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import StatusPill from "@/components/ui/StatusPill";
 import { Tabs } from "@/components/ui/Tabs";
 import { SimpleModal } from "@/components/common/SimpleModal";
+import { DatePicker } from "@/components/ui/DatePicker";
 import {
   sendInvoiceAction,
   markInvoicePaymentAction,
@@ -354,9 +355,8 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
               <Input id="amount" type="number" required min="1" step="0.01" placeholder="2500" value={newAmount} onChange={(e) => setNewAmount(e.target.value)} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="due_date" className="text-xs font-semibold text-foreground">Due Date *</label>
-              <input id="due_date" type="date" required value={newDueDate} onChange={(e) => setNewDueDate(e.target.value)}
-                className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+              <label className="text-xs font-semibold text-foreground">Due Date *</label>
+              <DatePicker value={newDueDate} onChange={setNewDueDate} placeholder="Pick due date" minDate={new Date().toISOString().split("T")[0]} />
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
@@ -432,10 +432,8 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
             Overdue reminders will be paused until this date. If payment is not received by then, the sequence will resume automatically.
           </p>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="promise_date" className="text-xs font-semibold text-foreground">Promised Payment Date</label>
-            <input id="promise_date" type="date" value={promiseDate} onChange={(e) => setPromiseDate(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            <label className="text-xs font-semibold text-foreground">Promised Payment Date</label>
+            <DatePicker value={promiseDate} onChange={setPromiseDate} placeholder="Pick promise date" minDate={new Date().toISOString().split("T")[0]} />
           </div>
           <div className="flex justify-end gap-3 pt-1">
             {promiseInvoice?.promise_date && (

@@ -13,6 +13,7 @@ import { SimpleModal } from "@/components/common/SimpleModal";
 import { ConfirmModal } from "@/components/common/ConfirmModal";
 import { WeekCalendar } from "@/components/ui/WeekCalendar";
 import { Icon } from "@iconify/react";
+import { DatePicker } from "@/components/ui/DatePicker";
 import type { Business } from "@/types";
 
 const STATUS_TABS = [
@@ -196,7 +197,7 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
               <option value="all">All Services</option>
               {services.map((srv) => <option key={srv.id} value={srv.id}>{srv.name}</option>)}
             </select>
-            <input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} className="h-10 px-3 rounded-xl border border-border bg-background/50 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+            <DatePicker value={selectedDate} onChange={setSelectedDate} placeholder="Filter by date" clearable />
           </div>
         </div>
 
@@ -341,9 +342,8 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
         <form onSubmit={handleRescheduleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="new_date" className="text-xs font-medium text-foreground">New Date</label>
-              <input id="new_date" type="date" required value={newDate} onChange={(e) => setNewDate(e.target.value)}
-                className="h-10 w-full rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+              <label className="text-xs font-medium text-foreground">New Date</label>
+              <DatePicker value={newDate} onChange={setNewDate} placeholder="Pick new date" clearable={false} />
             </div>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="new_time" className="text-xs font-medium text-foreground">New Time</label>
