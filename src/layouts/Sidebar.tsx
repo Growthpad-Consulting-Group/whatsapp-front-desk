@@ -21,10 +21,11 @@ const navItems = [
 
 interface SidebarProps {
   businessName?: string;
+  staffName?: string;
   isOpen: boolean;
 }
 
-export function Sidebar({ businessName, isOpen }: SidebarProps) {
+export function Sidebar({ businessName, staffName, isOpen }: SidebarProps) {
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -143,12 +144,12 @@ export function Sidebar({ businessName, isOpen }: SidebarProps) {
             isDark ? "hover:bg-white/5 text-gray-300 hover:text-white" : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
           )}
         >
-          <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-            <Icon icon="solar:user-circle-broken" className="h-5 w-5 text-primary" />
+          <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 text-xs font-bold text-primary">
+            {staffName ? staffName.charAt(0).toUpperCase() : <Icon icon="solar:user-circle-broken" className="h-5 w-5 text-primary" />}
           </div>
           {isOpen && (
             <div className="flex items-center justify-between w-full min-w-0">
-              <span className="text-sm font-semibold truncate">Account</span>
+              <span className="text-sm font-semibold truncate">{staffName ?? "Account"}</span>
               <Icon
                 icon="solar:alt-arrow-right-broken"
                 className={cn("w-4 h-4 text-gray-400 transition-transform duration-300", showUserMenu && "rotate-90")}

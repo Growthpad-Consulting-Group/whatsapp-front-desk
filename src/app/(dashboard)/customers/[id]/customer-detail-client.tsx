@@ -11,6 +11,7 @@ import {
   updateCustomerSpecialDatesAction,
 } from "@/actions/customers";
 import { Icon } from "@iconify/react";
+import toast from "react-hot-toast";
 import PageHeader from "@/components/ui/PageHeader";
 import { Tabs } from "@/components/ui/Tabs";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -64,22 +65,26 @@ export function CustomerDetailClient({
     setTags(next);
     setTagInput("");
     setTagsSaving(true);
-    await updateCustomerTagsAction(customer.id, next);
+    const res = await updateCustomerTagsAction(customer.id, next);
     setTagsSaving(false);
+    if (!res.success) toast.error("Failed to save tag.");
   };
 
   const handleRemoveTag = async (tag: string) => {
     const next = tags.filter((t) => t !== tag);
     setTags(next);
     setTagsSaving(true);
-    await updateCustomerTagsAction(customer.id, next);
+    const res = await updateCustomerTagsAction(customer.id, next);
     setTagsSaving(false);
+    if (!res.success) toast.error("Failed to remove tag.");
   };
 
   const handleSaveDates = async () => {
     setDatesSaving(true);
-    await updateCustomerSpecialDatesAction(customer.id, birthday || null, anniversary || null);
+    const res = await updateCustomerSpecialDatesAction(customer.id, birthday || null, anniversary || null);
     setDatesSaving(false);
+    if (res.success) toast.success("Special dates saved.");
+    else toast.error("Failed to save dates.");
   };
 
   const handleSaveNotes = async () => {
@@ -87,9 +92,12 @@ export function CustomerDetailClient({
     setNotesFeedback(null);
     const res = await updateCustomerNotesAction(customer.id, notes);
     setNotesLoading(false);
-    setNotesFeedback(res.success
-      ? { ok: true, msg: "Notes saved!" }
-      : { ok: false, msg: res.error || "Failed to update notes." });
+    if (res.success) {
+      toast.success("Notes saved.");
+    } else {
+      setNotesFeedback({ ok: false, msg: res.error || "Failed to update notes." });
+      toast.error(res.error || "Failed to update notes.");
+    }
   };
 
   const handleToggleConsent = async () => {
@@ -98,8 +106,13 @@ export function CustomerDetailClient({
     const nextConsent = !consent;
     const res = await updateCustomerConsentAction(customer.id, nextConsent);
     setConsentLoading(false);
-    if (res.success) setConsent(nextConsent);
-    else setConsentError(res.error || "Failed to update consent status.");
+    if (res.success) {
+      setConsent(nextConsent);
+      toast.success(nextConsent ? "Bot consent enabled." : "Bot consent disabled.");
+    } else {
+      setConsentError(res.error || "Failed to update consent status.");
+      toast.error(res.error || "Failed to update consent.");
+    }
   };
 
   const detailTabs = [

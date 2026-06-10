@@ -8,63 +8,7 @@ import { Icon } from "@iconify/react";
 import { AnimatedMetricCard } from "@/components/ui/AnimatedMetricCard";
 import { DashboardCharts } from "@/components/ui/DashboardCharts";
 
-type ActivityItem = {
-  id: string;
-  updated_at?: string;
-  timestamp?: string;
-  start_at?: string;
-  created_at?: string;
-  content_summary?: string;
-  status?: string;
-  direction?: string;
-  customers?: { name?: string; phone?: string };
-  services?: { name?: string };
-};
 
-function ActivitySection({ appointments, messages, timezone }: { appointments: ActivityItem[]; messages: ActivityItem[]; timezone: string }) {
-  const items = [...appointments, ...messages]
-    .sort((a, b) =>
-      new Date(b.updated_at ?? b.timestamp ?? 0).getTime() -
-      new Date(a.updated_at ?? a.timestamp ?? 0).getTime()
-    )
-    .slice(0, 10);
-
-  return (
-    <section className="bg-card/75 backdrop-blur-md border border-border rounded-2xl p-6 shadow-sm">
-      <h2 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
-        <Icon icon="solar:history-broken" className="h-4 w-4 text-muted-foreground" />
-        Recent Activity
-      </h2>
-      {items.length === 0 ? (
-        <div className="text-center py-10 text-muted-foreground space-y-2">
-          <Icon icon="solar:bell-off-broken" className="h-10 w-10 mx-auto text-muted-foreground/50" />
-          <p className="text-xs">No recent activity. Bookings and messages will appear here.</p>
-        </div>
-      ) : (
-        <ul className="space-y-1.5 max-h-80 overflow-y-auto pr-1">
-          {items.map((item) => (
-            <li key={item.id} className="flex items-start gap-3 rounded-xl px-3 py-2.5 hover:bg-muted/30 transition-colors">
-              <span className={cn("mt-1.5 h-2 w-2 rounded-full shrink-0", item.content_summary ? "bg-primary" : "bg-green-500")} />
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold text-foreground truncate">
-                  {item.content_summary
-                    ? (item.customers?.name ?? item.customers?.phone ?? "Client")
-                    : `${item.customers?.name ?? "Booking"} — ${item.services?.name ?? ""}`}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                  {item.content_summary ?? `Status: ${item.status}`}
-                </p>
-              </div>
-              <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5 whitespace-nowrap">
-                {formatDateTime(item.updated_at ?? item.timestamp ?? item.start_at ?? "", timezone)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
 
 interface WeeklyBookingData { labels: string[]; confirmed: number[]; cancelled: number[]; }
 interface RevenueData { labels: string[]; revenue: number[]; }
@@ -76,6 +20,7 @@ interface DashboardClientProps {
   overdueInvoices: number;
   recentMessages: any[];
   cancelledCount: number;
+  staffName: string;
   onboardingSteps: {
     hoursConfigured: boolean;
     servicesAdded: boolean;
@@ -93,6 +38,7 @@ export function DashboardClient({
   overdueInvoices,
   recentMessages,
   cancelledCount,
+  staffName,
   onboardingSteps,
   business,
   weeklyBookings,
@@ -124,21 +70,21 @@ export function DashboardClient({
     if (appt.payment_status === "deposit_pending") {
       return (
         <Badge variant="warning" className="flex items-center gap-1">
-          <Icon icon="mdi:cash-clock" className="h-3 w-3" /> Deposit due
+          <Icon icon="solar:wallet-money-broken" className="h-3 w-3" /> Deposit due
         </Badge>
       );
     }
     if (appt.status === "confirmed") {
       return (
         <Badge variant="success" className="flex items-center gap-1">
-          <Icon icon="mdi:calendar-check" className="h-3 w-3" /> Confirmed
+          <Icon icon="solar:check-circle-broken" className="h-3 w-3" /> Confirmed
         </Badge>
       );
     }
     if (appt.status === "pending") {
       return (
         <Badge variant="default" className="flex items-center gap-1">
-          <Icon icon="mdi:progress-clock" className="h-3 w-3" /> Pending
+          <Icon icon="solar:clock-circle-broken" className="h-3 w-3" /> Pending
         </Badge>
       );
     }
@@ -152,14 +98,14 @@ export function DashboardClient({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-5">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            {greeting}, manager! 👋
+            {greeting}, {staffName.split(" ")[0]}! 👋
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Here is what is happening at *{business.name}* today.
+            Here is what is happening at <strong>{business.name}</strong> today.
           </p>
         </div>
         <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground bg-muted/30 border border-border/40 rounded-xl px-3 py-1.5 h-fit w-fit">
-          <Icon icon="mdi:clock-outline" className="h-4 w-4 text-muted-foreground" />
+          <Icon icon="solar:clock-circle-broken" className="h-4 w-4 text-muted-foreground" />
           <span>
             {new Date().toLocaleDateString("en-GB", {
               weekday: "long",
@@ -207,7 +153,7 @@ export function DashboardClient({
               <div className="flex items-center justify-between gap-4">
                 <span className="flex items-center gap-2 font-medium text-foreground">
                   <Icon
-                    icon={onboardingSteps.hoursConfigured ? "mdi:check-circle" : "mdi:circle-outline"}
+                    icon={onboardingSteps.hoursConfigured ? "solar:check-circle-bold" : "solar:circle-broken"}
                     className={cn("h-4 w-4", onboardingSteps.hoursConfigured ? "text-green-500" : "text-muted-foreground")}
                   />
                   Set operating hours
@@ -222,7 +168,7 @@ export function DashboardClient({
               <div className="flex items-center justify-between gap-4 border-t border-border/30 pt-2.5">
                 <span className="flex items-center gap-2 font-medium text-foreground">
                   <Icon
-                    icon={onboardingSteps.servicesAdded ? "mdi:check-circle" : "mdi:circle-outline"}
+                    icon={onboardingSteps.servicesAdded ? "solar:check-circle-bold" : "solar:circle-broken"}
                     className={cn("h-4 w-4", onboardingSteps.servicesAdded ? "text-green-500" : "text-muted-foreground")}
                   />
                   Add booking services
@@ -237,7 +183,7 @@ export function DashboardClient({
               <div className="flex items-center justify-between gap-4 border-t border-border/30 pt-2.5">
                 <span className="flex items-center gap-2 font-medium text-foreground">
                   <Icon
-                    icon={onboardingSteps.calendarConnected ? "mdi:check-circle" : "mdi:circle-outline"}
+                    icon={onboardingSteps.calendarConnected ? "solar:check-circle-bold" : "solar:circle-broken"}
                     className={cn("h-4 w-4", onboardingSteps.calendarConnected ? "text-green-500" : "text-muted-foreground")}
                   />
                   Connect staff Google Cal
@@ -318,12 +264,12 @@ export function DashboardClient({
         <section className="bg-card/75 backdrop-blur-md border border-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
           <div>
             <h2 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
-              <Icon icon="mdi:format-list-bulleted" className="h-4 w-4 text-muted-foreground" />
+              <Icon icon="solar:list-broken" className="h-4 w-4 text-muted-foreground" />
               Today&apos;s Agenda
             </h2>
             {todayAppointments.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground space-y-2">
-                <Icon icon="mdi:calendar-blank-outline" className="h-10 w-10 mx-auto text-muted-foreground/50" />
+                <Icon icon="solar:calendar-broken" className="h-10 w-10 mx-auto text-muted-foreground/40" />
                 <p className="text-xs">No appointments scheduled for today.</p>
               </div>
             ) : (
@@ -358,12 +304,12 @@ export function DashboardClient({
         <section className="bg-card/75 backdrop-blur-md border border-border rounded-2xl p-6 shadow-sm flex flex-col justify-between">
           <div>
             <h2 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/30 pb-3 mb-4">
-              <Icon icon="mdi:message-text-clock-outline" className="h-4 w-4 text-muted-foreground" />
+              <Icon icon="solar:chat-square-broken" className="h-4 w-4 text-muted-foreground" />
               Live Inbox Feed
             </h2>
             {recentMessages.length === 0 ? (
               <div className="text-center py-10 text-muted-foreground space-y-2">
-                <Icon icon="mdi:message-off-outline" className="h-10 w-10 mx-auto text-muted-foreground/50" />
+                <Icon icon="solar:chat-square-broken" className="h-10 w-10 mx-auto text-muted-foreground/40" />
                 <p className="text-xs">No messages logged yet. Check back shortly.</p>
               </div>
             ) : (
@@ -404,12 +350,6 @@ export function DashboardClient({
 
       </div>
 
-      {/* Recent Activity Feed */}
-      <ActivitySection
-        appointments={todayAppointments}
-        messages={recentMessages}
-        timezone={business.timezone}
-      />
     </div>
   );
 }

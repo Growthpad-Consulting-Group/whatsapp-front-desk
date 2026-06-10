@@ -14,6 +14,7 @@ import { ConfirmModal } from "@/components/common/ConfirmModal";
 import { WeekCalendar } from "@/components/ui/WeekCalendar";
 import { Icon } from "@iconify/react";
 import { DatePicker } from "@/components/ui/DatePicker";
+import toast from "react-hot-toast";
 import type { Business } from "@/types";
 
 const STATUS_TABS = [
@@ -79,7 +80,12 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
     setBookings((prev) => prev.map((b) => (b.id === cancellingId ? { ...b, status: "cancelled" } : b)));
     const res = await cancelBookingAction(cancellingId);
     setCancelLoading(false);
-    if (!res.success) setBookings(initialBookings);
+    if (res.success) {
+      toast.success("Booking cancelled.");
+    } else {
+      setBookings(initialBookings);
+      toast.error("Failed to cancel booking.");
+    }
     setCancellingId(null);
   };
 
@@ -99,6 +105,9 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
     setNoShowLoading(false);
     if (res.success) {
       setBookings((prev) => prev.map((b) => b.id === noShowId ? { ...b, status: "no_show" } : b));
+      toast.success("Marked as no-show.");
+    } else {
+      toast.error("Failed to mark no-show.");
     }
     setNoShowId(null);
   };
@@ -123,8 +132,10 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
         })
       );
       setReschedulingBooking(null);
+      toast.success("Booking rescheduled.");
     } else {
       setModalError(res.error);
+      toast.error(res.error ?? "Failed to reschedule.");
     }
   };
 
@@ -321,7 +332,7 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
                       onClick={() => setCancellingId(appt.id)}
                       className="text-destructive hover:bg-destructive/10 border border-destructive/20 text-xs px-2"
                     >
-                      <Icon icon="solar:close-broken" className="h-3.5 w-3.5" />
+                      <Icon icon="solar:close-circle-broken" className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 )}

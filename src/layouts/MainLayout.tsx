@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTheme } from "next-themes";
+import { Toaster } from "react-hot-toast";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { Footer } from "./Footer";
@@ -32,6 +33,7 @@ export function MainLayout({ children, businessName, staffName }: MainLayoutProp
       >
         <Sidebar
           businessName={businessName}
+          staffName={staffName}
           isOpen={isSidebarOpen}
         />
       </aside>
@@ -48,6 +50,17 @@ export function MainLayout({ children, businessName, staffName }: MainLayoutProp
           {children}
         </main>
         <Footer />
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            duration: 3500,
+            style: {
+              borderRadius: "12px",
+              fontSize: "13px",
+              fontWeight: 500,
+            },
+          }}
+        />
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const { business } = await requireBusiness();
+  const { business, staff } = await requireBusiness();
   const supabase = await createClient();
 
   // Load basic stats
@@ -112,6 +112,7 @@ export default async function DashboardPage() {
       overdueInvoices={overdueInvoices}
       recentMessages={recentMessages}
       cancelledCount={cancelledCount}
+      staffName={staff.name}
       onboardingSteps={onboardingSteps}
       business={business}
       weeklyBookings={weeklyBookings}

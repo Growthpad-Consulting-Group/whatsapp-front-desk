@@ -11,6 +11,7 @@ import StatusPill from "@/components/ui/StatusPill";
 import { Tabs } from "@/components/ui/Tabs";
 import { SimpleModal } from "@/components/common/SimpleModal";
 import { DatePicker } from "@/components/ui/DatePicker";
+import toast from "react-hot-toast";
 import {
   sendInvoiceAction,
   markInvoicePaymentAction,
@@ -131,6 +132,9 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
     setSendingInvoiceId(null);
     if (res.success) {
       setInvoices((prev) => prev.map((inv) => inv.id === invoiceId ? { ...inv, status: "sent" } : inv));
+      toast.success("Invoice sent to customer.");
+    } else {
+      toast.error("Failed to send invoice.");
     }
   };
 
@@ -140,6 +144,9 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
     setTogglingPauseId(null);
     if (res.success) {
       setInvoices((prev) => prev.map((i) => i.id === inv.id ? { ...i, reminders_paused: !inv.reminders_paused } : i));
+      toast.success(inv.reminders_paused ? "Reminders resumed." : "Reminders paused.");
+    } else {
+      toast.error("Failed to update reminders.");
     }
   };
 
@@ -153,6 +160,9 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
       setInvoices((prev) => prev.map((i) => i.id === promiseInvoice.id ? { ...i, promise_date: promiseDate || null } : i));
       setPromiseInvoice(null);
       setPromiseDate("");
+      toast.success("Promise date saved.");
+    } else {
+      toast.error("Failed to save promise date.");
     }
   };
 
@@ -171,6 +181,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
       setInvoices((prev) => [{ ...res.data, customers: customer, promise_date: null, reminders_paused: false }, ...prev]);
       setIsCreateOpen(false);
       setNewCustomerId(""); setNewAmount(""); setNewDueDate(""); setNewNotes("");
+      toast.success("Invoice created.");
     } else {
       setCreateError(res.error ?? "Failed to create invoice.");
     }
@@ -193,8 +204,10 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
       }));
       setRecordingInvoice(null);
       setPaymentAmount(""); setPaymentNotes("");
+      toast.success("Payment recorded.");
     } else {
       setRecordError(res.error ?? "Failed to record payment.");
+      toast.error(res.error ?? "Failed to record payment.");
     }
   };
 
