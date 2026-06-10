@@ -16,6 +16,7 @@ import { Icon } from "@iconify/react";
 import { DateRangePicker, type DateRangeValue } from "@/components/ui/DateRangePicker";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { TooltipButton } from "@/components/ui/TooltipButton";
+import { FormError } from "@/components/ui/form-error";
 import toast from "react-hot-toast";
 import type { Business } from "@/types";
 
@@ -372,11 +373,7 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
             </select>
           </div>
 
-          {modalError && (
-            <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-xl p-3">
-              <Icon icon="solar:danger-circle-broken" className="h-4 w-4 shrink-0" /><span>{modalError}</span>
-            </div>
-          )}
+          {modalError && <FormError message={modalError} />}
 
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => setReschedulingBooking(null)} disabled={modalLoading}>Cancel</Button>

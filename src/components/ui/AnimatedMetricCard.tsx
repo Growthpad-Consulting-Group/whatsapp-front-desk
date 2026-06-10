@@ -53,7 +53,8 @@ function AnimatedMetricCard({
   const cardContent = (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl p-6 border group transition-all duration-300 cursor-pointer",
+        "relative overflow-hidden rounded-2xl p-6 border group transition-all duration-300",
+        href ? "cursor-pointer" : "cursor-default",
         variant === "card" && "bg-white dark:bg-card border-slate-100 dark:border-border shadow-lg hover:shadow-xl hover:-translate-y-0.5",
         variant === "glass" && "bg-white/70 dark:bg-card/60 border-white/40 dark:border-white/10 backdrop-blur-xl shadow-lg",
         variant === "transparent" && "bg-transparent border-transparent",

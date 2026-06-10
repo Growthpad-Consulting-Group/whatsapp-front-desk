@@ -232,6 +232,7 @@ export function DashboardClient({
           color="green"
           variant="card"
           mode="light"
+          href="/bookings"
         />
         <AnimatedMetricCard
           title="Pending Deposits"
@@ -240,6 +241,7 @@ export function DashboardClient({
           color="orange"
           variant="card"
           mode="light"
+          href="/bookings"
         />
         <AnimatedMetricCard
           title="Unpaid Invoices"
@@ -248,6 +250,7 @@ export function DashboardClient({
           color="purple"
           variant="card"
           mode="light"
+          href="/invoices"
         />
         <AnimatedMetricCard
           title="Cancellations Today"
@@ -256,6 +259,7 @@ export function DashboardClient({
           color="red"
           variant="card"
           mode="light"
+          href="/bookings"
         />
       </div>
 
