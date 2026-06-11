@@ -57,6 +57,13 @@ const NAV_ITEMS: NavItem[] = [
     description: "Message & reminder copy",
     ownerOnly: true,
   },
+  {
+    href: "/settings/bot",
+    label: "Bot Persona",
+    icon: "solar:robot-broken",
+    description: "Tone, name & personality",
+    ownerOnly: true,
+  },
 ];
 
 export function SettingsNav({ isOwner = false }: { isOwner?: boolean }) {

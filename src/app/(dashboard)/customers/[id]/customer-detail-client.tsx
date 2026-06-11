@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { formatCurrency, formatDateTime, cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,13 @@ export function CustomerDetailClient({
   messages,
   business,
 }: CustomerDetailClientProps) {
+  const ltv = useMemo(() => {
+    const completedVisits = appointments.filter((a: { status: string }) => a.status === "completed").length;
+    const totalSpend = invoices.reduce((acc: number, inv: { amount_paid?: number | string }) => acc + Number(inv.amount_paid ?? 0), 0);
+    const avgSpend = completedVisits > 0 ? totalSpend / completedVisits : 0;
+    return { completedVisits, totalSpend, avgSpend };
+  }, [appointments, invoices]);
+
   const [notes, setNotes] = useState(customer.notes || "");
   const [consent, setConsent] = useState(customer.consent_given);
   const [tags, setTags] = useState<string[]>(customer.tags ?? []);
@@ -167,6 +174,22 @@ export function CustomerDetailClient({
               <div className="flex justify-between">
                 <span className="text-muted-foreground font-semibold">Client Registered</span>
                 <span className="text-foreground">{new Date(customer.created_at).toLocaleDateString("en-GB")}</span>
+              </div>
+            </div>
+
+            {/* LTV metrics */}
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/40">
+              <div className="text-center">
+                <p className="text-base font-extrabold text-foreground">{ltv.completedVisits}</p>
+                <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Visits</p>
+              </div>
+              <div className="text-center border-x border-border/40">
+                <p className="text-base font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(ltv.totalSpend, business.currency)}</p>
+                <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Lifetime Value</p>
+              </div>
+              <div className="text-center">
+                <p className="text-base font-extrabold text-foreground">{ltv.avgSpend > 0 ? formatCurrency(ltv.avgSpend, business.currency) : "—"}</p>
+                <p className="text-[10px] text-muted-foreground font-medium mt-0.5">Avg / Visit</p>
               </div>
             </div>
 

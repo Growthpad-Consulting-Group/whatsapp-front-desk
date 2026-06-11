@@ -104,6 +104,35 @@ export default async function DashboardPage() {
     revenue: Array.from({ length: 8 }, (_, i) => revenueByWeek[i] || 0),
   };
 
+  // Retention — clients who visited this month vs last month
+  const now = new Date();
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const lastMonthEnd = new Date(thisMonthStart.getTime() - 1);
+
+  const [thisMonthAppts, lastMonthAppts] = await Promise.all([
+    supabase
+      .from("appointments")
+      .select("customer_id")
+      .eq("business_id", business.id)
+      .eq("status", "completed")
+      .gte("start_at", thisMonthStart.toISOString()),
+    supabase
+      .from("appointments")
+      .select("customer_id")
+      .eq("business_id", business.id)
+      .eq("status", "completed")
+      .gte("start_at", lastMonthStart.toISOString())
+      .lte("start_at", lastMonthEnd.toISOString()),
+  ]);
+
+  const thisMonthCustomerIds = new Set((thisMonthAppts.data || []).map((a: any) => a.customer_id));
+  const lastMonthCustomerIds = new Set((lastMonthAppts.data || []).map((a: any) => a.customer_id));
+  const returnedCount = [...lastMonthCustomerIds].filter((id) => thisMonthCustomerIds.has(id)).length;
+  const retentionRate = lastMonthCustomerIds.size > 0
+    ? Math.round((returnedCount / lastMonthCustomerIds.size) * 100)
+    : null;
+
   // Heatmap — last 30 days of appointments
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -128,6 +157,7 @@ export default async function DashboardPage() {
       business={business}
       weeklyBookings={weeklyBookings}
       revenueData={revenueData}
+      retentionRate={retentionRate}
     />
   );
 }

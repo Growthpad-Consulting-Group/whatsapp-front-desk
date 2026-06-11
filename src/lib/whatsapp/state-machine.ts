@@ -298,7 +298,17 @@ export async function handleWhatsAppMessage(
             )
             .join("\n");
 
-          outboundBody = `Hi ${customer.name}! Welcome to *${business.name}* booking desk. 🗓️\n\nPlease reply with the number of the service you'd like to book:\n\n${serviceList}`;
+          const botName: string = (business as any).bot_name || "Front Desk";
+          const botTone: string = (business as any).bot_tone || "warm";
+          const servicePrompt = "Please reply with the number of the service you'd like to book:";
+
+          if (botTone === "professional") {
+            outboundBody = `Good day, ${customer.name}. Thank you for contacting *${business.name}*.\n\n${servicePrompt}\n\n${serviceList}`;
+          } else if (botTone === "casual") {
+            outboundBody = `Hey ${customer.name}! 👋 You've reached *${business.name}* — let's get you sorted!\n\nPick a service:\n\n${serviceList}`;
+          } else {
+            outboundBody = `Hi ${customer.name}! Welcome to *${business.name}* 🗓️\n\nI'm ${botName}, your virtual booking assistant. ${servicePrompt}\n\n${serviceList}`;
+          }
         }
       }
       break;
@@ -645,8 +655,32 @@ export async function handleWhatsAppMessage(
                   business_name: business.name,
                 });
 
-                nextState = "idle";
-                context = {};
+                // Upsell: suggest other active services the customer hasn't booked this session
+                try {
+                  const { data: otherServices } = await supabase
+                    .from("services")
+                    .select("name, price")
+                    .eq("business_id", businessId)
+                    .eq("active", true)
+                    .neq("id", context.selectedServiceId!)
+                    .limit(3);
+
+                  if (otherServices && otherServices.length > 0) {
+                    const suggestions = otherServices
+                      .map((s: { name: string; price: number }, i: number) => `*${i + 1}.* ${s.name} — ${formatCurrency(Number(s.price), business.currency)}`)
+                      .join("\n");
+                    outboundBody += `\n\n💆 *Would you like to add another service?*\n${suggestions}\n\nReply with a number to book, or anything else to skip.`;
+                    nextState = "awaiting_service";
+                    context = {};
+                  }
+                } catch {
+                  // Upsell is non-critical — don't block the confirmation
+                }
+
+                if (nextState !== "awaiting_service") {
+                  nextState = "idle";
+                  context = {};
+                }
               }
             }
           }

@@ -309,3 +309,37 @@ export async function updateWhatsAppCredentialsAction(
     return { success: false, error: err.message || "An unexpected error occurred." };
   }
 }
+
+export async function updateBotPersonaAction(
+  botName: string,
+  botTone: string
+): Promise<ActionResult> {
+  try {
+    const { business, staff } = await requireBusiness();
+
+    if (staff.role !== "owner") {
+      return { success: false, error: "Only the business owner can configure the bot persona." };
+    }
+
+    const validTones = ["warm", "professional", "casual"];
+    if (!validTones.includes(botTone)) {
+      return { success: false, error: "Invalid tone selection." };
+    }
+
+    const supabase = await createClient();
+    const { error } = await (supabase
+      .from("businesses") as any)
+      .update({
+        bot_name: botName.trim() || "Front Desk",
+        bot_tone: botTone,
+      })
+      .eq("id", business.id);
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/settings/bot");
+    return { success: true, data: undefined };
+  } catch (err: any) {
+    return { success: false, error: err.message || "An unexpected error occurred." };
+  }
+}

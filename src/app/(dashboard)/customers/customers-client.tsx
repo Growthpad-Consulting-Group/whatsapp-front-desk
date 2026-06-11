@@ -27,6 +27,8 @@ type CustomerRow = {
   lastBooking: string;
   unpaidBalance: number;
   hasBooked: boolean;
+  visitCount: number;
+  totalSpend: number;
 };
 
 export function CustomersClient({
@@ -57,7 +59,10 @@ export function CustomersClient({
         0
       );
 
-      return { ...c, tags: c.tags ?? [], lastBooking, unpaidBalance, hasBooked: clientAppts.length > 0 };
+      const visitCount = clientAppts.filter((a: { status: string }) => a.status === "completed").length;
+      const totalSpend = clientInvs.reduce((acc: number, inv: { amount_paid?: number | string }) => acc + Number(inv.amount_paid ?? 0), 0);
+
+      return { ...c, tags: c.tags ?? [], lastBooking, unpaidBalance, hasBooked: clientAppts.length > 0, visitCount, totalSpend };
     });
   }, [initialCustomers, appointments, invoices]);
 
@@ -134,6 +139,25 @@ export function CustomersClient({
           <span className="font-bold text-red-500 text-sm">{formatCurrency(row.unpaidBalance, business.currency)}</span>
         ) : (
           <span className="text-xs text-muted-foreground">Settled</span>
+        ),
+    },
+    {
+      key: "visitCount",
+      header: "Visits",
+      sortable: true,
+      hideOnMobile: true,
+      render: (row) => <span className="text-sm font-semibold text-foreground">{row.visitCount}</span>,
+    },
+    {
+      key: "totalSpend",
+      header: "Lifetime Value",
+      sortable: true,
+      hideOnMobile: true,
+      render: (row) =>
+        row.totalSpend > 0 ? (
+          <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">{formatCurrency(row.totalSpend, business.currency)}</span>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
         ),
     },
     {

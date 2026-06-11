@@ -32,6 +32,7 @@ interface DashboardClientProps {
   weeklyBookings?: WeeklyBookingData;
   revenueData?: RevenueData;
   heatmapAppointments?: HeatmapAppointment[];
+  retentionRate?: number | null;
 }
 
 export function DashboardClient({
@@ -48,6 +49,7 @@ export function DashboardClient({
   weeklyBookings,
   revenueData,
   heatmapAppointments = [],
+  retentionRate,
 }: DashboardClientProps) {
 
   // Helper to get initials
@@ -223,8 +225,8 @@ export function DashboardClient({
         </div>
       )}
 
-      {/* Metrics Cards Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Metrics Cards Grid — 2×2 Operational */}
+      <div className="grid grid-cols-2 gap-4">
         <AnimatedMetricCard
           title="Today's Bookings"
           value={todayAppointments.length}
@@ -261,6 +263,61 @@ export function DashboardClient({
           mode="light"
           href="/bookings"
         />
+      </div>
+
+      {/* Business Health Banner */}
+      <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-blue-700 via-blue-600 to-cyan-500 p-5 shadow-md border border-blue-500/30">
+        <div className="absolute -top-8 -right-8 w-36 h-36 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+        <div className="absolute -bottom-6 left-1/3 w-24 h-24 rounded-full bg-cyan-300/10 blur-2xl pointer-events-none" />
+        <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {/* Label */}
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-white/15 border border-white/20 shrink-0">
+              <Icon icon="solar:pulse-2-broken" className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Business Health</p>
+              <p className="text-md font-bold text-white leading-tight">Client Retention Rate</p>
+              <p className="text-xs text-white/50 mt-0.5">% of last month&apos;s clients who returned</p>
+            </div>
+          </div>
+
+          {/* Metric */}
+          <div className="flex items-center gap-4 sm:gap-6">
+            <div className="text-center">
+              <p className="text-4xl font-black text-white tabular-nums">
+                {(retentionRate ?? null) !== null ? `${retentionRate}%` : "—"}
+              </p>
+              <p className="text-[10px] text-white/50 mt-0.5">this month</p>
+            </div>
+
+            {/* Health label chip */}
+            {(() => {
+              const rate = retentionRate ?? null;
+              return (
+                <div className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-bold border shrink-0",
+                  rate === null
+                    ? "bg-white/10 border-white/20 text-white/50"
+                    : rate >= 60
+                    ? "bg-green-400/20 border-green-300/30 text-green-100"
+                    : rate >= 35
+                    ? "bg-amber-400/20 border-amber-300/30 text-amber-100"
+                    : "bg-red-400/20 border-red-300/30 text-red-100"
+                )}>
+                  {rate === null ? "No data yet" : rate >= 60 ? "✦ Excellent" : rate >= 35 ? "⚑ Good" : "⚠ Needs work"}
+                </div>
+              );
+            })()}
+
+            <Link
+              href="/customers"
+              className="text-[11px] font-bold text-white/70 hover:text-white hover:underline shrink-0 transition-colors"
+            >
+              View clients →
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Needs Attention */}
@@ -316,8 +373,8 @@ export function DashboardClient({
                   <Icon icon="solar:calendar-broken" className="h-6 w-6 text-muted-foreground/50" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-foreground">No appointments today</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">Your schedule is currently clear.</p>
+                  <p className="text-sm font-bold text-foreground">No appointments today</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Your schedule is currently clear.</p>
                 </div>
               </div>
             ) : (

@@ -33,6 +33,7 @@ const TEMPLATE_TYPES = [
   { type: "invoice_due", label: "Invoice Due", icon: "solar:calendar-date-broken", category: "Invoice" },
   { type: "invoice_overdue_1_3", label: "Invoice Overdue (1–3 Days)", icon: "solar:danger-triangle-broken", category: "Invoice" },
   { type: "invoice_overdue_4_7", label: "Invoice Overdue (4–7 Days)", icon: "solar:danger-circle-broken", category: "Invoice" },
+  { type: "post_visit_review", label: "Post-Visit Review Request", icon: "solar:star-broken", category: "Follow-up" },
 ];
 
 const DEFAULT_TEMPLATES: Record<string, string> = {
@@ -44,6 +45,7 @@ const DEFAULT_TEMPLATES: Record<string, string> = {
   invoice_due: "Hi {{customer_name}}, this is a reminder that invoice {{invoice_number}} for {{amount}} is due today. View and pay here: {{invoice_link}} — {{business_name}}",
   invoice_overdue_1_3: "Hi {{customer_name}}, this is a friendly reminder that invoice {{invoice_number}} for {{amount}} is overdue. Please complete your payment here: {{invoice_link}} — {{business_name}}",
   invoice_overdue_4_7: "Hi {{customer_name}}, invoice {{invoice_number}} for {{amount}} is overdue. Please let us know when you can complete payment or click here: {{invoice_link}} — {{business_name}}",
+  post_visit_review: "Hi {{customer_name}}! Thank you for visiting {{business_name}} today. We'd love to hear your feedback — it takes just a minute and means the world to us. 🙏",
 };
 
 const VARIABLES = [
