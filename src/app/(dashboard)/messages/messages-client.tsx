@@ -168,12 +168,12 @@ export function MessagesClient({
   const [handoffs, setHandoffs] = useState<HandoffSession[]>(initialHandoffs);
   const [logs, setLogs] = useState<MessageLogItem[]>(initialLogs);
   const [releasingId, setReleasingId] = useState<string | null>(null);
-  
+
   // Navigation / Focus States
   const [activeChatPhone, setActiveChatPhone] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [sendingMessage, setSendingMessage] = useState(false);
-  
+
   // Simulator states
   const [isSimulating, setIsSimulating] = useState(false);
   const simIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -283,7 +283,7 @@ export function MessagesClient({
       }
 
       const step = SIMULATION_FLOW[simStepRef.current];
-      
+
       const newLog: MessageLogItem = {
         id: `sim-msg-${simStepRef.current}-${Date.now()}`,
         direction: step.direction as "inbound" | "outbound",
@@ -342,30 +342,18 @@ export function MessagesClient({
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (container) {
-      if (activeChatPhone) {
-        // Chat mode (oldest -> newest, scroll to bottom)
-        container.scrollTo({
-          top: container.scrollHeight,
-          behavior: "smooth",
-        });
-      } else {
-        // Feed mode (newest -> oldest, scroll to top)
-        container.scrollTo({
-          top: 0,
-          behavior: "smooth",
-        });
-      }
+      // Both feed and chat modes are now oldest -> newest, so scroll to bottom
+      container.scrollTo({
+        top: container.scrollHeight,
+        behavior: "smooth",
+      });
     }
   }, [logs, activeChatPhone]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
-    if (activeChatPhone) {
-      const isScrolledUp = target.scrollHeight - target.scrollTop - target.clientHeight > 150;
-      setShowScrollBottom(isScrolledUp);
-    } else {
-      setShowScrollBottom(false);
-    }
+    const isScrolledUp = target.scrollHeight - target.scrollTop - target.clientHeight > 150;
+    setShowScrollBottom(isScrolledUp);
   };
 
   const handleToggleSimulation = (enabled: boolean) => {
@@ -469,13 +457,13 @@ export function MessagesClient({
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "sent":
-        return <Icon icon="solar:check-broken" className="h-3.5 w-3.5 text-muted-foreground" />;
+        return <Icon icon="mdi:check" className="h-4 w-4 text-[#8696a0]" />;
       case "delivered":
-        return <Icon icon="solar:double-alt-check-broken" className="h-3.5 w-3.5 text-muted-foreground" />;
+        return <Icon icon="mdi:check-all" className="h-4 w-4 text-[#8696a0]" />;
       case "read":
-        return <Icon icon="solar:double-alt-check-broken" className="h-3.5 w-3.5 text-primary" />;
+        return <Icon icon="mdi:check-all" className="h-4 w-4 text-[#53bdeb]" />;
       case "failed":
-        return <Icon icon="solar:danger-triangle-broken" className="h-3.5 w-3.5 text-destructive" />;
+        return <Icon icon="mdi:alert-circle-outline" className="h-4 w-4 text-rose-500 animate-pulse" />;
       default:
         return null;
     }
@@ -510,6 +498,14 @@ export function MessagesClient({
         .animate-msg {
           animation: msgSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+        .whatsapp-chat-bg {
+          background-color: #efeae2;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23dfdcd6' fill-opacity='0.45'%3E%3Cpath fill-rule='evenodd' d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zM11 13c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm48 25c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM38 34c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-2c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1zm16-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm0-2c.276 0 .5-.224 .5-.5s-.224-.5-.5-.5-.5.224-.5.5.224.5.5.5zM22 64c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm0-2c.276 0 .5-.224 .5-.5s-.224-.5-.5-.5-.5.224-.5.5.224.5.5.5zm30 4c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm0-2c.276 0 .5-.224 .5-.5s-.224-.5-.5-.5-.5.224-.5.5.224.5.5.5zM32 50c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm0-2c.276 0 .5-.224 .5-.5s-.224-.5-.5-.5-.5.224-.5.5.224.5.5.5z'/%3E%3C/g%3E%3C/svg%3E");
+        }
+        .dark .whatsapp-chat-bg {
+          background-color: #0b141a;
+          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%231c2c35' fill-opacity='0.55'%3E%3Cpath fill-rule='evenodd' d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zM11 13c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm48 25c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM38 34c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-2c.552 0 1-.448 1-1s-.448-1-1-1-1 .448-1 1 .448 1 1 1zm16-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm0-2c.276 0 .5-.224 .5-.5s-.224-.5-.5-.5-.5.224-.5.5.224.5.5.5zM22 64c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm0-2c.276 0 .5-.224 .5-.5s-.224-.5-.5-.5-.5.224-.5.5.224.5.5.5zm30 4c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm0-2c.276 0 .5-.224 .5-.5s-.224-.5-.5-.5-.5.224-.5.5.224.5.5.5zM32 50c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zm0-2c.276 0 .5-.224 .5-.5s-.224-.5-.5-.5-.5.224-.5.5.224.5.5.5z'/%3E%3C/g%3E%3C/svg%3E");
+        }
       `}</style>
 
       <PageHeader
@@ -524,11 +520,10 @@ export function MessagesClient({
         <div className="flex items-center bg-card border border-border/80 shadow-sm p-1.5 rounded-2xl gap-1.5">
           <button
             onClick={() => handleToggleSimulation(false)}
-            className={`px-3 py-1.5 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all duration-300 ${
-              !isSimulating
+            className={`px-3 py-1.5 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all duration-300 ${!isSimulating
                 ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-md"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             <span className={`relative flex h-2 w-2 ${!isSimulating ? "" : "opacity-40"}`}>
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -538,11 +533,10 @@ export function MessagesClient({
           </button>
           <button
             onClick={() => handleToggleSimulation(true)}
-            className={`px-3 py-1.5 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all duration-300 ${
-              isSimulating
+            className={`px-3 py-1.5 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-all duration-300 ${isSimulating
                 ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/10"
                 : "text-muted-foreground hover:text-foreground"
-            }`}
+              }`}
           >
             <span className={`relative flex h-2 w-2 ${isSimulating ? "" : "opacity-40"}`}>
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
@@ -591,11 +585,10 @@ export function MessagesClient({
                   <div
                     key={session.id}
                     onClick={() => setActiveChatPhone(session.customer_phone)}
-                    className={`group relative p-3.5 border rounded-2xl flex flex-col justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 ${
-                      isActive
+                    className={`group relative p-3.5 border rounded-2xl flex flex-col justify-between gap-3 cursor-pointer transition-all duration-300 hover:-translate-y-0.5 ${isActive
                         ? "bg-slate-900 text-white border-slate-950 dark:bg-slate-50 dark:text-slate-900 shadow-md shadow-slate-950/10"
                         : "bg-muted/10 border-border/60 hover:bg-muted/30"
-                    }`}
+                      }`}
                   >
                     <div className="space-y-1">
                       <div className="flex justify-between items-start gap-2">
@@ -640,25 +633,31 @@ export function MessagesClient({
 
         {/* Right Column: Live Message Feed (Chronological Feed or Focused Direct Chat) */}
         <div className="lg:col-span-2 relative bg-card/60 dark:bg-slate-900/60 backdrop-blur-md border border-border/80 rounded-3xl p-5 shadow-sm flex flex-col h-150 overflow-hidden">
-          
+
           {/* Header */}
           <div className="pb-4 border-b border-border/60 flex justify-between items-center shrink-0">
             {activeChatPhone ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 w-full">
                 <button
                   onClick={() => setActiveChatPhone(null)}
-                  className="h-9 w-9 rounded-xl border border-border hover:bg-muted/40 text-foreground flex items-center justify-center transition-all duration-300 hover:-translate-x-0.5"
+                  className="h-9 w-9 rounded-xl border border-border hover:bg-muted/40 text-foreground flex items-center justify-center transition-all duration-300 hover:-translate-x-0.5 shrink-0"
                 >
                   <Icon icon="solar:arrow-left-broken" className="h-5 w-5" />
                 </button>
-                <div>
+                <div className="relative">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#128C7E] to-[#25D366] text-white flex items-center justify-center font-extrabold shadow-sm text-sm shrink-0 border border-emerald-500/20">
+                    {activeChatClientName.substring(0, 2).toUpperCase()}
+                  </div>
+                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card animate-pulse" />
+                </div>
+                <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-sm text-foreground">{activeChatClientName}</span>
-                    <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/50">
-                      Handoff
+                    <span className="font-extrabold text-sm text-foreground truncate">{activeChatClientName}</span>
+                    <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 shrink-0">
+                      Live Chat
                     </span>
                   </div>
-                  <span className="text-xs text-muted-foreground">{activeChatPhone}</span>
+                  <span className="text-[11px] text-muted-foreground block truncate">{activeChatPhone}</span>
                 </div>
               </div>
             ) : (
@@ -715,7 +714,8 @@ export function MessagesClient({
           <div
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto py-4 pr-1.5 space-y-4 custom-scrollbar"
+            className={`flex-1 overflow-y-auto py-4 px-4 space-y-4 custom-scrollbar rounded-2xl transition-all duration-300 ${activeChatPhone ? "whatsapp-chat-bg border border-border/40" : ""
+              }`}
           >
             {activeChatPhone ? (
               /* DIRECT CHAT STATE (Oldest first, scrolls to bottom) */
@@ -726,7 +726,7 @@ export function MessagesClient({
                   <p className="text-sm text-muted-foreground mt-0.5">Send a message below to assist the client.</p>
                 </div>
               ) : (
-                <div className="space-y-3.5">
+                <div className="space-y-3">
                   {directChatLogs.map((log) => {
                     const isInbound = log.direction === "inbound";
                     return (
@@ -735,21 +735,20 @@ export function MessagesClient({
                         className={`flex ${isInbound ? "justify-start" : "justify-end"} animate-msg`}
                       >
                         <div
-                          className={`max-w-[80%] rounded-2xl px-4 py-2.5 shadow-sm space-y-1 transition-all duration-300 ${
-                            isInbound
-                              ? "bg-slate-100 dark:bg-slate-850 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200/40 dark:border-slate-800/40"
-                              : "bg-slate-900 dark:bg-slate-50 text-white dark:text-slate-950 rounded-tr-none"
-                          }`}
+                          className={`max-w-[75%] px-3.5 py-2.5 shadow-sm relative transition-all duration-300 ${isInbound
+                              ? "bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tl-none border border-slate-250/20 dark:border-slate-850/40 shadow-xs"
+                              : "bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tr-none shadow-xs"
+                            }`}
                         >
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed">
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed pb-3 pr-8 select-text">
                             {log.content_summary}
                           </p>
-                          <div className="flex justify-between items-center gap-4 pt-1">
-                            <span className={`text-[9px] font-medium opacity-60`}>
-                              {formatDateTime(log.timestamp, timezone)}
+                          <div className="absolute bottom-1 right-2 flex items-center gap-1">
+                            <span className="text-[9px] opacity-65 text-[#667781] dark:text-[#aebac1] font-semibold">
+                              {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
                             {!isInbound && (
-                              <div className="opacity-90">
+                              <div className="shrink-0 flex items-center">
                                 {getStatusIcon(log.status)}
                               </div>
                             )}
@@ -761,7 +760,7 @@ export function MessagesClient({
                 </div>
               )
             ) : (
-              /* CHRONOLOGICAL LIVE ACTIVITY FEED (Newest first, scrolls to top) */
+              /* CHRONOLOGICAL LIVE ACTIVITY FEED (Oldest first, scrolls to bottom) */
               logs.length === 0 ? (
                 <EmptyState
                   icon="solar:chat-broken"
@@ -770,7 +769,7 @@ export function MessagesClient({
                 />
               ) : (
                 <div className="space-y-3.5">
-                  {logs.map((log) => {
+                  {[...logs].reverse().map((log) => {
                     const isInbound = log.direction === "inbound";
                     const clientName = log.customers?.name || log.customers?.phone || "Client";
                     const clientPhone = log.customers?.phone || (log as any).customer_phone;
@@ -783,9 +782,8 @@ export function MessagesClient({
                       >
                         <div className="flex justify-between items-start gap-4">
                           <div className="flex items-center gap-2">
-                            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-inner bg-gradient-to-tr ${
-                              isInbound ? "from-emerald-500 to-teal-400" : "from-blue-600 to-blue-400"
-                            }`}>
+                            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-inner bg-gradient-to-tr ${isInbound ? "from-emerald-500 to-teal-400" : "from-blue-600 to-blue-400"
+                              }`}>
                               {isInbound ? clientName.substring(0, 2).toUpperCase() : "Bot"}
                             </div>
                             <div>
@@ -815,11 +813,10 @@ export function MessagesClient({
                                 >
                                   {isInbound ? clientName : "Booking Assistant"}
                                 </button>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-black border ${
-                                  isInbound
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-black border ${isInbound
                                     ? "bg-teal-50 dark:bg-teal-950/20 text-teal-700 dark:text-teal-400 border-teal-200/50"
                                     : "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 border-blue-200/50"
-                                }`}>
+                                  }`}>
                                   {isInbound ? "INBOUND" : "OUTBOUND"}
                                 </span>
                               </div>
@@ -849,26 +846,59 @@ export function MessagesClient({
           </div>
 
           {/* Footer Input Bar */}
-          <div className="pt-4 border-t border-border/60 shrink-0">
+          <div className="pt-3 border-t border-border/60 shrink-0">
             {activeChatPhone ? (
               <form onSubmit={handleSendAgentReply} className="flex gap-2 items-center">
-                <input
-                  type="text"
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder={`Reply to ${activeChatClientName}...`}
-                  disabled={sendingMessage}
-                  className="flex-1 min-w-0 bg-muted/30 border border-border/80 focus:border-primary/50 text-foreground text-sm px-4 py-2.5 rounded-2xl outline-hidden focus:ring-1 focus:ring-primary/30 transition-all duration-300 disabled:opacity-50"
-                />
-                <Button
+                <div className="flex-1 flex gap-2 items-center bg-[#f0f2f5] dark:bg-[#202c33] rounded-2xl px-3 py-1.5 border border-border/40">
+                  {/* Emoji Button */}
+                  <button
+                    type="button"
+                    className="text-[#667781] dark:text-[#aebac1] hover:text-[#111b21] dark:hover:text-white transition-colors shrink-0 p-1"
+                    title="Emojis"
+                  >
+                    <Icon icon="mdi:emoticon-happy-outline" className="h-5.5 w-5.5" />
+                  </button>
+
+                  {/* Attachment Button */}
+                  <button
+                    type="button"
+                    className="text-[#667781] dark:text-[#aebac1] hover:text-[#111b21] dark:hover:text-white transition-colors shrink-0 p-1"
+                    title="Attach"
+                  >
+                    <Icon icon="mdi:paperclip" className="h-5.5 w-5.5 rotate-45" />
+                  </button>
+
+                  <input
+                    type="text"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Type a message"
+                    disabled={sendingMessage}
+                    className="flex-1 min-w-0 bg-transparent border-none focus:outline-none focus:ring-0 text-foreground text-sm py-1 px-1 placeholder-[#667781] dark:placeholder-[#aebac1]"
+                  />
+                </div>
+
+                {/* Circular Send Button (Transforms to Microphone if input is empty) */}
+                <button
                   type="submit"
-                  size="sm"
-                  disabled={!replyText.trim() || sendingMessage}
-                  className="h-10 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-50 dark:hover:bg-slate-150 text-white dark:text-slate-950 font-bold flex items-center justify-center gap-1.5 transition-all duration-300 active:scale-95"
+                  disabled={!replyText.trim() && !sendingMessage}
+                  className={`h-10 w-10 rounded-full flex items-center justify-center text-white shadow-sm shrink-0 transition-all duration-300 ${replyText.trim()
+                      ? "bg-[#00a884] hover:bg-[#008f72] active:scale-95 cursor-pointer"
+                      : "bg-[#8696a0] dark:bg-[#2a3942] text-white/80 cursor-default"
+                    }`}
+                  title={replyText.trim() ? "Send message" : "Voice message placeholder"}
+                  onClick={(e) => {
+                    if (!replyText.trim()) {
+                      e.preventDefault();
+                      toast("Voice messages are simulated! Start typing to send text.", { icon: "🎙️" });
+                    }
+                  }}
                 >
-                  <Icon icon="solar:send-bold-duotone" className="h-4 w-4" />
-                  Send
-                </Button>
+                  <Icon
+                    icon={replyText.trim() ? "mdi:send" : "mdi:microphone"}
+                    className="h-5 w-5"
+                  />
+                </button>
               </form>
             ) : (
               <div className="text-center py-2 text-xs text-muted-foreground flex items-center justify-center gap-1.5">
