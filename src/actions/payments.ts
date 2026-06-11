@@ -2,7 +2,7 @@
 
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/server";
-import { getPaymentProvider } from "@/lib/payments/provider";
+import { createPaystackProvider } from "@/lib/payments/paystack";
 
 export async function createPaymentLinkAction(
   appointmentId: string | null,
@@ -13,7 +13,6 @@ export async function createPaymentLinkAction(
   try {
     const adminSupabase = createAdminClient();
 
-    // Fetch customer details (email or default placeholder)
     let email = "customer@whatsapp.business.flow";
     let businessId: string | null = null;
     let customerName = "Client";
@@ -24,11 +23,9 @@ export async function createPaymentLinkAction(
         .select("*, customers(*)")
         .eq("id", appointmentId)
         .single();
-      
-      if (!appt) {
-        return { success: false, error: "Appointment not found." };
-      }
-      
+
+      if (!appt) return { success: false, error: "Appointment not found." };
+
       businessId = appt.business_id;
       if (appt.customers?.email) {
         email = appt.customers.email;
@@ -42,11 +39,9 @@ export async function createPaymentLinkAction(
         .select("*, customers(*)")
         .eq("id", invoiceId)
         .single();
-      
-      if (!inv) {
-        return { success: false, error: "Invoice not found." };
-      }
-      
+
+      if (!inv) return { success: false, error: "Invoice not found." };
+
       businessId = inv.business_id;
       if (inv.customers?.email) {
         email = inv.customers.email;
@@ -60,7 +55,18 @@ export async function createPaymentLinkAction(
       return { success: false, error: "Could not resolve business details." };
     }
 
-    // Check if a pending payment request already exists and is less than 2 hours old
+    // Fetch the business's own Paystack secret key
+    const { data: business } = await adminSupabase
+      .from("businesses")
+      .select("paystack_secret_key")
+      .eq("id", businessId)
+      .single();
+
+    if (!business?.paystack_secret_key) {
+      return { success: false, error: "Paystack is not connected. The business owner must add their Paystack Secret Key in Settings." };
+    }
+
+    // Check if a pending payment request already exists (< 2 hours old)
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
     const query = adminSupabase
       .from("payment_requests")
@@ -78,13 +84,10 @@ export async function createPaymentLinkAction(
     }
 
     const { data: existingReq } = await query.maybeSingle();
+    if (existingReq) return { success: true, url: existingReq.link };
 
-    if (existingReq) {
-      return { success: true, url: existingReq.link };
-    }
-
-    // Initialize payment transaction with active provider
-    const provider = await getPaymentProvider("paystack");
+    // Initialize with the business's own Paystack account
+    const provider = createPaystackProvider(business.paystack_secret_key);
     const reference = `pay_req_${crypto.randomUUID()}`;
     const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/pay/status`;
 
@@ -94,15 +97,9 @@ export async function createPaymentLinkAction(
       currency,
       reference,
       callbackUrl,
-      metadata: {
-        appointmentId,
-        invoiceId,
-        businessId,
-        customerName,
-      },
+      metadata: { appointmentId, invoiceId, businessId, customerName },
     });
 
-    // Save payment request details
     const { error: insertError } = await adminSupabase
       .from("payment_requests")
       .insert({
@@ -114,7 +111,7 @@ export async function createPaymentLinkAction(
         amount,
         currency,
         status: "pending",
-        webhook_reference: reference, // maps callback transaction
+        webhook_reference: reference,
       });
 
     if (insertError) {

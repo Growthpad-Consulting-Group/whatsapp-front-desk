@@ -24,9 +24,9 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/settings/connection",
-    label: "WhatsApp",
-    icon: "mdi:whatsapp",
-    description: "WABA number & webhook",
+    label: "Connections",
+    icon: "solar:plug-circle-broken",
+    description: "WhatsApp & Paystack",
   },
   {
     href: "/settings/services",

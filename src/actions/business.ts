@@ -256,6 +256,31 @@ export async function updateMessageTemplateAction(
   }
 }
 
+export async function updatePaystackCredentialsAction(
+  secretKey: string
+): Promise<ActionResult> {
+  try {
+    const { business, staff } = await requireBusiness();
+
+    if (staff.role !== "owner") {
+      return { success: false, error: "Only the business owner can update payment credentials." };
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("businesses")
+      .update({ paystack_secret_key: secretKey.trim() || null })
+      .eq("id", business.id);
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/settings");
+    return { success: true, data: undefined };
+  } catch (err: any) {
+    return { success: false, error: err.message || "An unexpected error occurred." };
+  }
+}
+
 export async function updateWhatsAppCredentialsAction(
   phoneNumberId: string,
   accessToken: string

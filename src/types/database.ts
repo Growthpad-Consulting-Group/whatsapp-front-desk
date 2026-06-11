@@ -145,6 +145,7 @@ export type Database = {
           whatsapp_number: string | null
           whatsapp_phone_number_id: string | null
           whatsapp_access_token: string | null
+          paystack_secret_key: string | null
         }
         Insert: {
           billing_plan?: string
@@ -161,6 +162,7 @@ export type Database = {
           whatsapp_number?: string | null
           whatsapp_phone_number_id?: string | null
           whatsapp_access_token?: string | null
+          paystack_secret_key?: string | null
         }
         Update: {
           billing_plan?: string
@@ -177,6 +179,7 @@ export type Database = {
           whatsapp_number?: string | null
           whatsapp_phone_number_id?: string | null
           whatsapp_access_token?: string | null
+          paystack_secret_key?: string | null
         }
         Relationships: []
       }

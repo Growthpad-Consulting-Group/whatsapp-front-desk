@@ -4,16 +4,15 @@ import type { PaymentProvider, InitializeTransactionParams, InitializeTransactio
 export class PaystackProvider implements PaymentProvider {
   private secretKey: string;
 
-  constructor() {
-    this.secretKey = process.env.PAYSTACK_SECRET_KEY || "";
+  constructor(secretKey?: string) {
+    this.secretKey = secretKey || process.env.PAYSTACK_SECRET_KEY || "";
   }
 
   async initializeTransaction(params: InitializeTransactionParams): Promise<InitializeTransactionResult> {
     if (!this.secretKey) {
-      throw new Error("PAYSTACK_SECRET_KEY is not configured in environment variables.");
+      throw new Error("Paystack secret key is not configured. The business owner must add their Paystack Secret Key in Settings.");
     }
 
-    // Paystack expects amount in subunits (e.g. cents for KES/USD/NGN)
     const amountInSubunits = Math.round(params.amount * 100);
 
     const response = await fetch("https://api.paystack.co/transaction/initialize", {
@@ -46,14 +45,19 @@ export class PaystackProvider implements PaymentProvider {
 
   verifyWebhookSignature(rawBody: string, signature: string): boolean {
     if (!this.secretKey || !signature) return false;
-    
+
     const hash = crypto
       .createHmac("sha512", this.secretKey)
       .update(rawBody)
       .digest("hex");
-      
+
     return hash === signature;
   }
 }
 
+export function createPaystackProvider(secretKey: string): PaystackProvider {
+  return new PaystackProvider(secretKey);
+}
+
+// Backward-compat singleton (uses env var)
 export const paystackProvider = new PaystackProvider();

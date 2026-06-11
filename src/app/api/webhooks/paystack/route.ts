@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { paystackProvider } from "@/lib/payments/paystack";
-import { whatsappClient } from "@/lib/whatsapp/client";
+import { createPaystackProvider } from "@/lib/payments/paystack";
+import { createWhatsAppClient } from "@/lib/whatsapp/client";
 import { formatCurrency } from "@/lib/utils";
 
-// Helpers for template replacement
 function fillTemplate(body: string, variables: Record<string, string>): string {
   let filled = body;
   for (const [key, val] of Object.entries(variables)) {
@@ -17,59 +16,68 @@ export async function POST(request: NextRequest) {
   const signature = request.headers.get("x-paystack-signature") || "";
   const rawBody = await request.text();
 
-  // Validate webhook authenticity
-  const isValid = paystackProvider.verifyWebhookSignature(rawBody, signature);
-  if (!isValid) {
-    console.warn("[Paystack Webhook] Invalid webhook signature detected.");
-    return new NextResponse("Unauthorized", { status: 401 });
-  }
-
   let payload: any;
   try {
     payload = JSON.parse(rawBody);
-  } catch (err: any) {
+  } catch {
     return new NextResponse("Invalid JSON", { status: 400 });
   }
 
-  // We only handle successful charges
   if (payload.event !== "charge.success") {
     return new NextResponse("Event ignored", { status: 200 });
   }
 
-  const data = payload.data || {};
-  const reference = data.reference;
-
+  const reference = payload.data?.reference;
   if (!reference) {
     return new NextResponse("Missing transaction reference", { status: 400 });
   }
 
   const supabase = createAdminClient();
 
+  // Look up payment request first so we know which business's key to use for verification
+  const { data: payReq, error: payReqError } = await supabase
+    .from("payment_requests")
+    .select("*")
+    .eq("webhook_reference", reference)
+    .single();
+
+  if (payReqError || !payReq) {
+    console.warn(`[Paystack Webhook] Payment request not found for reference: ${reference}`);
+    return new NextResponse("Payment request not found", { status: 404 });
+  }
+
+  // Fetch the business's own Paystack secret key and verify signature
+  const { data: business } = await supabase
+    .from("businesses")
+    .select("paystack_secret_key, whatsapp_phone_number_id, whatsapp_access_token")
+    .eq("id", payReq.business_id)
+    .single();
+
+  const secretKey = business?.paystack_secret_key || process.env.PAYSTACK_SECRET_KEY || "";
+  const provider = createPaystackProvider(secretKey);
+
+  if (!provider.verifyWebhookSignature(rawBody, signature)) {
+    console.warn("[Paystack Webhook] Invalid webhook signature detected.");
+    return new NextResponse("Unauthorized", { status: 401 });
+  }
+
+  if (payReq.status === "paid") {
+    return new NextResponse("Success", { status: 200 });
+  }
+
   try {
-    // 1. Resolve payment request record
-    const { data: payReq, error: payReqError } = await supabase
-      .from("payment_requests")
-      .select("*")
-      .eq("webhook_reference", reference)
-      .single();
-
-    if (payReqError || !payReq) {
-      console.warn(`[Paystack Webhook] Payment request not found for reference: ${reference}`);
-      return new NextResponse("Payment request not found", { status: 404 });
-    }
-
-    if (payReq.status === "paid") {
-      // Already processed (idempotent response)
-      return new NextResponse("Success", { status: 200 });
-    }
-
-    // 2. Mark payment request as paid
+    // Mark payment request as paid
     await supabase
       .from("payment_requests")
       .update({ status: "paid" })
       .eq("id", payReq.id);
 
-    // 3. Process Appointment Deposit Payment
+    const whatsappClient = createWhatsAppClient(
+      business?.whatsapp_phone_number_id ?? "",
+      business?.whatsapp_access_token ?? ""
+    );
+
+    // Process Appointment Deposit Payment
     if (payReq.appointment_id) {
       const { data: appt, error: apptError } = await supabase
         .from("appointments")
@@ -83,30 +91,20 @@ export async function POST(request: NextRequest) {
       }
 
       const service = appt.services as any;
-      const business = appt.businesses as any;
+      const apptBusiness = appt.businesses as any;
       const customer = appt.customers as any;
       const staff = appt.staff_members as any;
 
-      // Update appointment status to confirmed & deposit_paid
       await supabase
         .from("appointments")
-        .update({
-          status: "confirmed",
-          payment_status: "deposit_paid",
-        })
+        .update({ status: "confirmed", payment_status: "deposit_paid" })
         .eq("id", appt.id);
 
-      // Google Calendar Sync
       if (staff && staff.calendar_connected) {
         try {
           const { createGoogleEvent } = await import("@/lib/calendar/google");
           const googleEventId = await createGoogleEvent(
-            staff.id,
-            appt.id,
-            appt.start_at,
-            appt.end_at,
-            customer.name,
-            service.name
+            staff.id, appt.id, appt.start_at, appt.end_at, customer.name, service.name
           );
           if (googleEventId) {
             await supabase
@@ -119,14 +117,12 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Reset WhatsApp conversation session back to idle
       await supabase
         .from("conversation_sessions")
         .update({ state: "idle", context: {} })
         .eq("business_id", appt.business_id)
         .eq("customer_phone", customer.phone);
 
-      // Send confirmation WhatsApp message
       const { data: template } = await supabase
         .from("message_templates")
         .select("body")
@@ -142,14 +138,13 @@ export async function POST(request: NextRequest) {
       const messageContent = fillTemplate(templateBody, {
         customer_name: customer.name,
         service_name: service.name,
-        date: startAt.toLocaleDateString("en-GB", { timeZone: business.timezone }),
-        time: startAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: business.timezone }),
-        business_name: business.name,
+        date: startAt.toLocaleDateString("en-GB", { timeZone: apptBusiness.timezone }),
+        time: startAt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: apptBusiness.timezone }),
+        business_name: apptBusiness.name,
       });
 
       try {
         const { messageId } = await whatsappClient.sendText(customer.phone, messageContent);
-        
         await supabase.from("message_logs").insert({
           business_id: appt.business_id,
           customer_id: customer.id,
@@ -164,7 +159,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 4. Process Invoice Payment
+    // Process Invoice Payment
     if (payReq.invoice_id) {
       const { data: inv, error: invError } = await supabase
         .from("invoices")
@@ -178,18 +173,13 @@ export async function POST(request: NextRequest) {
       }
 
       const customer = inv.customers as any;
-      const business = inv.businesses as any;
+      const invBusiness = inv.businesses as any;
 
-      // Update invoice as paid
       await supabase
         .from("invoices")
-        .update({
-          status: "paid",
-          amount_paid: inv.amount,
-        })
+        .update({ status: "paid", amount_paid: inv.amount })
         .eq("id", inv.id);
 
-      // If tied to an appointment, mark that appointment payment status as paid
       if (inv.appointment_id) {
         await supabase
           .from("appointments")
@@ -197,16 +187,13 @@ export async function POST(request: NextRequest) {
           .eq("id", inv.appointment_id);
       }
 
-      // Send WhatsApp payment confirmation
-      const startAt = new Date();
       const messageContent = `Hi ${customer.name}, we received your payment of ${formatCurrency(
         Number(inv.amount),
-        business.currency
-      )} for invoice ${inv.invoice_number}. Thank you for your business! — ${business.name}`;
+        invBusiness.currency
+      )} for invoice ${inv.invoice_number}. Thank you for your business! — ${invBusiness.name}`;
 
       try {
         const { messageId } = await whatsappClient.sendText(customer.phone, messageContent);
-
         await supabase.from("message_logs").insert({
           business_id: inv.business_id,
           customer_id: customer.id,

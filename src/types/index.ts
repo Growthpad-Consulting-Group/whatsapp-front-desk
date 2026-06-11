@@ -56,6 +56,7 @@ export interface Business {
   whatsapp_number: string;
   whatsapp_phone_number_id: string | null;
   whatsapp_access_token: string | null;
+  paystack_secret_key: string | null;
   logo_url: string | null;
   billing_plan: string;
   cancellation_hours: number;
