@@ -33,9 +33,10 @@ interface BookingsClientProps {
   staffMembers: any[];
   services: any[];
   business: Business;
+  isOwner?: boolean;
 }
 
-export function BookingsClient({ initialBookings, staffMembers, services, business }: BookingsClientProps) {
+export function BookingsClient({ initialBookings, staffMembers, services, business, isOwner = false }: BookingsClientProps) {
   const [bookings, setBookings] = useState<any[]>(initialBookings);
 
   // Filters
@@ -316,7 +317,7 @@ export function BookingsClient({ initialBookings, staffMembers, services, busine
                   </div>
                 </div>
 
-                {appt.status !== "cancelled" && appt.status !== "completed" && appt.status !== "no_show" && (
+                {isOwner && appt.status !== "cancelled" && appt.status !== "completed" && appt.status !== "no_show" && (
                   <div className="flex gap-2 border-t border-border/50 pt-4 mt-4">
                     <Button type="button" variant="secondary" size="sm" onClick={() => openRescheduleModal(appt)} className="flex-1 text-xs">
                       Reschedule

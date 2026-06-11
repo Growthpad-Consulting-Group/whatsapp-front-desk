@@ -69,7 +69,7 @@ export function PaystackConnectionCard({ business, isOwner }: Props) {
           </div>
         </div>
 
-        <span className={`self-start sm:self-center inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border shrink-0 transition-all duration-300 ${
+        <span className={`self-start sm:self-center inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border shrink-0 transition-all duration-300 ${
           isConnected
             ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200/50 text-emerald-600 dark:text-emerald-400"
             : "bg-amber-50 dark:bg-amber-950/20 border-amber-200/50 text-amber-600 dark:text-amber-400 animate-pulse"
@@ -97,7 +97,7 @@ export function PaystackConnectionCard({ business, isOwner }: Props) {
           </div>
           <div className="flex justify-between items-center py-0.5">
             <span className="text-muted-foreground font-medium">Mode</span>
-            <span className={`font-bold px-2.5 py-1 rounded-lg border text-[10px] ${
+            <span className={`font-bold px-2.5 py-1 rounded-lg border text-xs ${
               secretKey.startsWith("sk_live_")
                 ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200/50 text-emerald-600 dark:text-emerald-400"
                 : "bg-amber-50 dark:bg-amber-950/20 border-amber-200/50 text-amber-600 dark:text-amber-400"
@@ -138,7 +138,7 @@ export function PaystackConnectionCard({ business, isOwner }: Props) {
               Find your Secret Key at <strong>Paystack Dashboard → Settings → API Keys & Webhooks</strong>.
               Use <strong>sk_live_</strong> for real payments. Your webhook URL is:
               <br />
-              <code className="mt-1 inline-block bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded text-[10px] font-mono break-all">
+              <code className="mt-1 inline-block bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded text-xs font-mono break-all">
                 {process.env.NEXT_PUBLIC_APP_URL ?? "https://your-app.com"}/api/webhooks/paystack
               </code>
             </p>

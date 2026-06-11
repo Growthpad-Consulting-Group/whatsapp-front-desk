@@ -166,6 +166,14 @@ export function Sidebar({ businessName, staffName, isOpen }: SidebarProps) {
         >
           <div className="flex flex-col gap-1 p-1">
             <div className="my-1 h-px bg-white/10 dark:bg-white/5" />
+            <Link
+              href="/help"
+              onClick={() => setShowUserMenu(false)}
+              className="flex items-center gap-3 w-full p-2.5 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white transition-all duration-250"
+            >
+              <Icon icon="solar:question-circle-broken" className="h-5 w-5" />
+              <span>Help & Support</span>
+            </Link>
             <form action={logoutAction}>
               <button
                 type="submit"

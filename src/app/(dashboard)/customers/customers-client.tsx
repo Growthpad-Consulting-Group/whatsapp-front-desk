@@ -14,6 +14,7 @@ interface CustomersClientProps {
   appointments: any[];
   invoices: any[];
   business: any;
+  isOwner?: boolean;
 }
 
 type CustomerRow = {
@@ -33,6 +34,7 @@ export function CustomersClient({
   appointments,
   invoices,
   business,
+  isOwner = false,
 }: CustomersClientProps) {
   const router = useRouter();
   const [activeTag, setActiveTag] = useState<string | null>(null);

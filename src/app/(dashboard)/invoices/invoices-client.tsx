@@ -71,9 +71,10 @@ interface InvoicesClientProps {
   customers: CustomerOption[];
   services: ServiceOption[];
   business: Business;
+  isOwner?: boolean;
 }
 
-export function InvoicesClient({ initialInvoices, customers, business }: Omit<InvoicesClientProps, "services"> & { services?: ServiceOption[] }) {
+export function InvoicesClient({ initialInvoices, customers, business, isOwner = false }: Omit<InvoicesClientProps, "services"> & { services?: ServiceOption[] }) {
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -227,7 +228,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
         icon="solar:document-text-bold-duotone"
         iconBgColor="bg-linear-to-br from-blue-600 to-blue-500"
         description="Track outstanding and collected revenue"
-        actions={[{ label: "Create Invoice", icon: "solar:add-circle-broken", variant: "primary", onClick: () => setIsCreateOpen(true) }]}
+        actions={isOwner ? [{ label: "Create Invoice", icon: "solar:add-circle-broken", variant: "primary", onClick: () => setIsCreateOpen(true) }] : []}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -326,7 +327,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
                   <Button variant="ghost" size="sm" onClick={() => setViewingInvoice(inv)} className="flex-1 flex items-center justify-center gap-1 border border-border hover:bg-muted">
                     <Icon icon="solar:eye-broken" className="h-3.5 w-3.5" /> View
                   </Button>
-                  {outstanding > 0 && inv.status !== "cancelled" && (
+                  {isOwner && outstanding > 0 && inv.status !== "cancelled" && (
                     <>
                       <Button variant="ghost" size="sm" loading={sendingInvoiceId === inv.id} onClick={() => handleSendReminder(inv.id)} className="flex-1 flex items-center justify-center gap-1 border border-border hover:bg-muted">
                         <Icon icon="solar:plain-2-broken" className="h-3.5 w-3.5" /> Remind
@@ -478,7 +479,7 @@ export function InvoicesClient({ initialInvoices, customers, business }: Omit<In
                   <Icon icon="solar:printer-minimalistic-broken" className="h-4 w-4" />
                   Print
                 </Button>
-                {outstanding > 0 && inv.status !== "cancelled" && (
+                {isOwner && outstanding > 0 && inv.status !== "cancelled" && (
                   <Button
                     size="sm"
                     loading={sendingInvoiceId === inv.id}

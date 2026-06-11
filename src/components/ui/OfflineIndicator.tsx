@@ -21,15 +21,18 @@ export function OfflineIndicator() {
     };
 
     // Initial check
-    setIsOnline(navigator.onLine);
-    if (!navigator.onLine) {
-      setShowBanner(true);
-    }
+    const timer = setTimeout(() => {
+      setIsOnline(navigator.onLine);
+      if (!navigator.onLine) {
+        setShowBanner(true);
+      }
+    }, 0);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
     return () => {
+      clearTimeout(timer);
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
@@ -52,7 +55,7 @@ export function OfflineIndicator() {
               </div>
               <div className="flex-1">
                 <p className="text-xs font-black">Connection Restored</p>
-                <p className="text-[10px] opacity-90 mt-0.5 font-medium">Real-time sync resumed successfully.</p>
+                <p className="text-xs opacity-90 mt-0.5 font-medium">Real-time sync resumed successfully.</p>
               </div>
             </div>
           ) : (
@@ -62,7 +65,7 @@ export function OfflineIndicator() {
               </div>
               <div className="flex-1">
                 <p className="text-xs font-black">Connection Lost</p>
-                <p className="text-[10px] opacity-90 mt-0.5 font-medium">Real-time message feeds are paused.</p>
+                <p className="text-xs opacity-90 mt-0.5 font-medium">Real-time message feeds are paused.</p>
               </div>
             </div>
           )}

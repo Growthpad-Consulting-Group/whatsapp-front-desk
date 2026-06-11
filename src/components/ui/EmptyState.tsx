@@ -101,7 +101,7 @@ export default function EmptyState({
           <button
             onClick={action.onClick}
             disabled={action.loading}
-            className="relative inline-flex items-center gap-3 px-8 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-black uppercase tracking-widest text-[11px] transition-all shadow-xl hover:shadow-green-600/40 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed group overflow-hidden"
+            className="relative inline-flex items-center gap-3 px-8 py-3.5 bg-green-600 hover:bg-green-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs transition-all shadow-xl hover:shadow-green-600/40 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed group overflow-hidden"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
             {action.loading
@@ -115,7 +115,7 @@ export default function EmptyState({
         {secondaryAction && (
           <button
             onClick={secondaryAction.onClick}
-            className="flex items-center gap-3 px-8 py-3.5 bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 rounded-2xl font-bold text-[11px] uppercase tracking-widest transition-all shadow-sm hover:shadow-md"
+            className="flex items-center gap-3 px-8 py-3.5 bg-white hover:bg-gray-50 text-gray-900 border border-gray-200 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all shadow-sm hover:shadow-md"
           >
             <Icon icon={secondaryAction.icon ?? "solar:refresh-broken"} className="w-4 h-4" />
             {secondaryAction.label}

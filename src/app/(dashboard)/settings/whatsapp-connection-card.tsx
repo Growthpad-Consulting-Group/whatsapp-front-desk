@@ -68,7 +68,7 @@ export function WhatsAppConnectionCard({ business, isOwner }: Props) {
           </div>
         </div>
         
-        <span className={`self-start sm:self-center inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border shrink-0 transition-all duration-300 ${
+        <span className={`self-start sm:self-center inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border shrink-0 transition-all duration-300 ${
           isConnected
             ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200/50 text-emerald-600 dark:text-emerald-400"
             : "bg-amber-50 dark:bg-amber-950/20 border-amber-200/50 text-amber-600 dark:text-amber-400 animate-pulse"

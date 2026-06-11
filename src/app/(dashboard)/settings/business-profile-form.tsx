@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Icon } from "@iconify/react";
 import { updateBusinessProfileAction, updateBookingPoliciesAction } from "@/actions/business";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,8 @@ function SectionCard({ children, className = "" }: { children: React.ReactNode; 
   );
 }
 
+// ─── SaveRow component ───────────────────────────────────────────────────────
+
 function SaveRow({ pending, disabled }: { pending: boolean; disabled: boolean }) {
   if (disabled) return null;
   return (
@@ -56,18 +59,24 @@ function SaveRow({ pending, disabled }: { pending: boolean; disabled: boolean })
 // ─── Local select wrapper (matches Input styling, scoped to this form) ────────
 
 function Select({
-  id, name, label, disabled, required, defaultValue, children,
+  id, name, label, disabled, required, value, onChange, children,
 }: {
   id: string; name: string; label: string;
-  disabled?: boolean; required?: boolean; defaultValue?: string;
+  disabled?: boolean; required?: boolean; value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   children: React.ReactNode;
 }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-sm font-medium text-foreground">{label}</label>
       <select
-        id={id} name={name} disabled={disabled} required={required} defaultValue={defaultValue}
-        className="h-10 w-full rounded-xl border border-border/80 bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-border/100 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+        id={id}
+        name={name}
+        disabled={disabled}
+        required={required}
+        value={value}
+        onChange={onChange}
+        className="h-10 w-full rounded-xl border border-border/80 bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-border/100 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         {children}
       </select>
@@ -78,12 +87,36 @@ function Select({
 // ─── Section 1: Business Identity ────────────────────────────────────────────
 
 function BusinessIdentityForm({ business, isOwner }: { business: Business; isOwner: boolean }) {
+  const router = useRouter();
   const [state, dispatch, pending] = useActionState(updateBusinessProfileAction, undefined);
 
+  const [name, setName] = useState(business.name);
+  const [industry, setIndustry] = useState(business.industry || "");
+  const [whatsappNumber, setWhatsappNumber] = useState(business.whatsapp_number);
+  const [timezone, setTimezone] = useState(business.timezone);
+  const [currency, setCurrency] = useState(business.currency);
+
+  const [prevBusiness, setPrevBusiness] = useState(business);
+
+  // Sync state with props changes during render (avoids cascading render lint warnings)
+  if (business !== prevBusiness) {
+    setPrevBusiness(business);
+    setName(business.name);
+    setIndustry(business.industry || "");
+    setWhatsappNumber(business.whatsapp_number);
+    setTimezone(business.timezone);
+    setCurrency(business.currency);
+  }
+
   useEffect(() => {
-    if (state?.success === true) toast.success("Business profile saved.");
-    else if (state?.success === false) toast.error(state.error || "Failed to save.");
-  }, [state]);
+    if (state?.success === true) {
+      toast.success("Business profile saved.");
+      router.refresh();
+    }
+    else if (state?.success === false) {
+      toast.error(state.error || "Failed to save.");
+    }
+  }, [state, router]);
 
   return (
     <SectionCard>
@@ -99,7 +132,8 @@ function BusinessIdentityForm({ business, isOwner }: { business: Business; isOwn
             label="Business name"
             name="name"
             type="text"
-            defaultValue={business.name}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             disabled={!isOwner}
             required
           />
@@ -110,7 +144,8 @@ function BusinessIdentityForm({ business, isOwner }: { business: Business; isOwn
             label="Industry"
             disabled={!isOwner}
             required
-            defaultValue={business.industry || ""}
+            value={industry}
+            onChange={(e) => setIndustry(e.target.value)}
           >
             <option value="" disabled>Select your industry</option>
             {INDUSTRIES.map((ind) => (
@@ -122,7 +157,8 @@ function BusinessIdentityForm({ business, isOwner }: { business: Business; isOwn
             label="WhatsApp WABA Number"
             name="whatsapp_number"
             type="tel"
-            defaultValue={business.whatsapp_number}
+            value={whatsappNumber}
+            onChange={(e) => setWhatsappNumber(e.target.value)}
             disabled={!isOwner}
             hint="Include country code, e.g. +254712345678"
             required
@@ -135,7 +171,8 @@ function BusinessIdentityForm({ business, isOwner }: { business: Business; isOwn
               label="Timezone"
               disabled={!isOwner}
               required
-              defaultValue={business.timezone}
+              value={timezone}
+              onChange={(e) => setTimezone(e.target.value)}
             >
               {TIMEZONES.map((tz) => (
                 <option key={tz.value} value={tz.value}>{tz.label}</option>
@@ -148,7 +185,8 @@ function BusinessIdentityForm({ business, isOwner }: { business: Business; isOwn
               label="Currency"
               disabled={!isOwner}
               required
-              defaultValue={business.currency}
+              value={currency}
+              onChange={(e) => setCurrency(e.target.value)}
             >
               {CURRENCIES.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
@@ -166,12 +204,30 @@ function BusinessIdentityForm({ business, isOwner }: { business: Business; isOwn
 // ─── Section 2: Booking & Payment Policies ────────────────────────────────────
 
 function BookingPoliciesForm({ business, isOwner }: { business: Business; isOwner: boolean }) {
+  const router = useRouter();
   const [state, dispatch, pending] = useActionState(updateBookingPoliciesAction, undefined);
 
+  const [cancellationHours, setCancellationHours] = useState(business.cancellation_hours.toString());
+  const [depositPercent, setDepositPercent] = useState(business.deposit_default_percent?.toString() ?? "");
+
+  const [prevBusiness, setPrevBusiness] = useState(business);
+
+  // Sync state with props changes during render (avoids cascading render lint warnings)
+  if (business !== prevBusiness) {
+    setPrevBusiness(business);
+    setCancellationHours(business.cancellation_hours.toString());
+    setDepositPercent(business.deposit_default_percent?.toString() ?? "");
+  }
+
   useEffect(() => {
-    if (state?.success === true) toast.success("Booking policies saved.");
-    else if (state?.success === false) toast.error(state.error || "Failed to save.");
-  }, [state]);
+    if (state?.success === true) {
+      toast.success("Booking policies saved.");
+      router.refresh();
+    }
+    else if (state?.success === false) {
+      toast.error(state.error || "Failed to save.");
+    }
+  }, [state, router]);
 
   return (
     <SectionCard>
@@ -189,7 +245,8 @@ function BookingPoliciesForm({ business, isOwner }: { business: Business; isOwne
             type="number"
             min="0"
             max="168"
-            defaultValue={business.cancellation_hours}
+            value={cancellationHours}
+            onChange={(e) => setCancellationHours(e.target.value)}
             disabled={!isOwner}
             hint="Minimum hours before an appointment a client can cancel."
             required
@@ -201,7 +258,8 @@ function BookingPoliciesForm({ business, isOwner }: { business: Business; isOwne
             type="number"
             min="0"
             max="100"
-            defaultValue={business.deposit_default_percent ?? ""}
+            value={depositPercent}
+            onChange={(e) => setDepositPercent(e.target.value)}
             disabled={!isOwner}
             hint="Leave blank if no deposit is required by default."
           />
@@ -244,7 +302,6 @@ function DangerZone({ isOwner }: { isOwner: boolean }) {
           variant="destructive"
           className="shrink-0 h-9 px-4 text-sm font-bold rounded-xl"
           onClick={() => {
-            // TODO: wire up delete confirmation dialog
             toast.error("Contact support to delete your account.");
           }}
         >

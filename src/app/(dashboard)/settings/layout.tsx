@@ -1,16 +1,20 @@
 import type { Metadata } from "next";
 import PageHeader from "@/components/ui/PageHeader";
 import { SettingsNav } from "./settings-nav";
+import { requireBusiness } from "@/lib/data/business";
 
 export const metadata: Metadata = {
   title: "Settings — WhatsApp Front Desk",
 };
 
-export default function SettingsLayout({
+export default async function SettingsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { staff } = await requireBusiness();
+  const isOwner = staff.role === "owner";
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -21,17 +25,14 @@ export default function SettingsLayout({
       />
 
       <div className="flex gap-8 items-start">
-        {/* Left — vertical settings nav */}
         <aside className="hidden lg:flex flex-col w-52 shrink-0">
-          <SettingsNav />
+          <SettingsNav isOwner={isOwner} />
         </aside>
 
-        {/* Mobile — horizontal scrollable nav */}
         <div className="lg:hidden w-full overflow-x-auto pb-2">
-          <SettingsNav />
+          <SettingsNav isOwner={isOwner} />
         </div>
 
-        {/* Right — page content */}
         <div className="flex-1 min-w-0">
           {children}
         </div>

@@ -10,50 +10,61 @@ interface NavItem {
   label: string;
   icon: string;
   description: string;
-  /** Exact match — use for the root /settings route */
   exact?: boolean;
+  ownerOnly?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
+  {
+    href: "/settings/profile",
+    label: "My Profile",
+    icon: "solar:user-circle-broken",
+    description: "Name, phone & calendar",
+  },
   {
     href: "/settings",
     label: "Business",
     icon: "solar:buildings-2-broken",
     description: "Profile, hours & region",
     exact: true,
+    ownerOnly: true,
   },
   {
     href: "/settings/connection",
     label: "Connections",
     icon: "solar:plug-circle-broken",
     description: "WhatsApp & Paystack",
+    ownerOnly: true,
   },
   {
     href: "/settings/services",
     label: "Services",
     icon: "solar:tag-price-broken",
     description: "Catalogue & pricing",
+    ownerOnly: true,
   },
   {
     href: "/settings/staff",
     label: "Staff",
     icon: "solar:users-group-rounded-broken",
     description: "Team members & roles",
+    ownerOnly: true,
   },
   {
     href: "/settings/templates",
     label: "Templates",
     icon: "solar:document-text-broken",
     description: "Message & reminder copy",
+    ownerOnly: true,
   },
 ];
 
-export function SettingsNav() {
+export function SettingsNav({ isOwner = false }: { isOwner?: boolean }) {
   const pathname = usePathname();
 
   return (
     <nav aria-label="Settings navigation" className="flex flex-col gap-0.5">
-      {NAV_ITEMS.map(({ href, label, icon, description, exact }) => {
+      {NAV_ITEMS.filter((item) => !item.ownerOnly || isOwner).map(({ href, label, icon, description, exact }) => {
         const active = exact ? pathname === href : pathname === href || pathname.startsWith(`${href}/`);
 
         return (

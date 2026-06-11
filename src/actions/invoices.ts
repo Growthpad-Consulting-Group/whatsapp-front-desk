@@ -93,7 +93,8 @@ export async function createInvoiceAction(appointmentId: string): Promise<any> {
 
 export async function sendInvoiceAction(invoiceId: string): Promise<ActionResult> {
   try {
-    const { business } = await requireBusiness();
+    const { business, staff } = await requireBusiness();
+    if (staff.role !== "owner") return { success: false, error: "Only the business owner can send invoices." };
     const supabase = await createClient();
 
     const { data: inv, error: fetchError } = await supabase
@@ -162,7 +163,8 @@ export async function markInvoicePaymentAction(
   notes?: string
 ): Promise<ActionResult> {
   try {
-    const { business } = await requireBusiness();
+    const { business, staff } = await requireBusiness();
+    if (staff.role !== "owner") return { success: false, error: "Only the business owner can record payments." };
     const supabase = await createClient();
 
     const { data: inv, error: fetchError } = await supabase
@@ -221,7 +223,8 @@ export async function createManualInvoiceAction(
   notes?: string
 ): Promise<{ success: boolean; data?: any; error?: string }> {
   try {
-    const { business } = await requireBusiness();
+    const { business, staff } = await requireBusiness();
+    if (staff.role !== "owner") return { success: false, error: "Only the business owner can create invoices." };
     const supabase = await createClient();
 
     let invoiceNumber = "";

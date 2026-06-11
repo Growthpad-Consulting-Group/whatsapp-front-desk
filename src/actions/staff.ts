@@ -265,3 +265,29 @@ export async function disconnectCalendarAction(
     return { success: false, error: err.message || "An unexpected error occurred." };
   }
 }
+
+export async function updateOwnProfileAction(
+  name: string,
+  phone: string
+): Promise<ActionResult> {
+  try {
+    const { business, staff } = await requireBusiness();
+
+    const trimmedName = name.trim();
+    if (!trimmedName) return { success: false, error: "Name is required." };
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("staff_members")
+      .update({ name: trimmedName, phone: phone.trim() || null })
+      .eq("id", staff.id)
+      .eq("business_id", business.id);
+
+    if (error) return { success: false, error: error.message };
+
+    revalidatePath("/settings/profile");
+    return { success: true, data: undefined };
+  } catch (err: any) {
+    return { success: false, error: err.message || "An unexpected error occurred." };
+  }
+}

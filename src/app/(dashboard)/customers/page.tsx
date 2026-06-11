@@ -8,7 +8,8 @@ export const metadata: Metadata = {
 };
 
 export default async function CustomersPage() {
-  const { business } = await requireBusiness();
+  const { business, staff } = await requireBusiness();
+  const isOwner = staff.role === "owner";
   const supabase = await createClient();
 
   // Fetch all customers scoped to this business
@@ -38,6 +39,7 @@ export default async function CustomersPage() {
       appointments={appts || []}
       invoices={invs || []}
       business={business}
+      isOwner={isOwner}
     />
   );
 }

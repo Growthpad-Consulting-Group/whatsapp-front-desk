@@ -18,9 +18,6 @@ export function Footer() {
           <Link href="/help" className="hover:text-primary transition-colors">
             Support
           </Link>
-          <Link href="/docs" className="hover:text-primary transition-colors">
-            Docs
-          </Link>
           <span className="opacity-50 cursor-default">v1.0.0</span>
         </div>
       </div>

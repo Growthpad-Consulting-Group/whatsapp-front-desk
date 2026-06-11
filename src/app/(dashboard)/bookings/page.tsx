@@ -8,7 +8,8 @@ export const metadata: Metadata = {
 };
 
 export default async function BookingsPage() {
-  const { business } = await requireBusiness();
+  const { business, staff } = await requireBusiness();
+  const isOwner = staff.role === "owner";
   const supabase = await createClient();
 
   // Load active staff members for filtering/rescheduling
@@ -44,6 +45,7 @@ export default async function BookingsPage() {
       staffMembers={staffMembers || []}
       services={services || []}
       business={business}
+      isOwner={isOwner}
     />
   );
 }
