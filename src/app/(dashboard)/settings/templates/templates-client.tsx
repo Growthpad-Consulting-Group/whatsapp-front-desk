@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import PageHeader from "@/components/ui/PageHeader";
 import { SimpleModal } from "@/components/common/SimpleModal";
 import { GenericTable, type TableColumn } from "@/components/ui/GenericTable";
+import { WhatsAppWindow } from "@/components/ui/WhatsAppWindow";
 import toast from "react-hot-toast";
 
 interface Template {
@@ -208,41 +209,33 @@ function EditorModal({ row, business, onClose, onSaved }: EditorModalProps) {
             {STATUS_LABEL[status]}
           </div>
 
-          {/* WhatsApp phone mockup */}
+          {/* WhatsApp window preview */}
           <div className="flex-1 flex flex-col">
             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-3">Live Preview</p>
 
-            {/* Phone frame */}
-            <div className="bg-background border border-border shadow-md rounded-2xl p-3 flex flex-col gap-2">
-              {/* Chat header */}
-              <div className="flex items-center gap-2 pb-2 border-b border-border">
-                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-bold text-primary">
-                  {(row?.label ?? "W").charAt(0)}
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-foreground leading-none">Booking Bot</p>
-                  <p className="text-[10px] text-green-600 dark:text-green-400">online</p>
-                </div>
-              </div>
-
-              {/* Message bubble */}
-              <div className="flex justify-start">
-                <div className="bg-[#E2F9CD] dark:bg-[#054640] rounded-2xl rounded-tl-none px-3 py-2 max-w-[90%] shadow-xs">
-                  <p className="text-xs text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-wrap wrap-break-word font-sans">
+            <WhatsAppWindow
+              name={business.name}
+              subtitle="Booking Bot · online"
+              avatarIcon="solar:magic-stick-3-broken"
+              headerRight={<Icon icon="mdi:whatsapp" className="h-4 w-4 text-white/60" />}
+              bodyClassName="min-h-32"
+            >
+              <div className="flex justify-end">
+                <div className="bg-[#d9fdd3] rounded-2xl rounded-tr-sm px-3 py-2 max-w-[92%] shadow-xs relative">
+                  <p className="text-xs text-slate-800 leading-relaxed whitespace-pre-wrap wrap-break-word pr-12 pb-1">
                     {livePreview || <span className="text-slate-400/70 italic">Message preview…</span>}
                   </p>
-                  <div className="flex items-center justify-end gap-1 mt-1">
-                    <span className="text-[8px] text-slate-500/80 dark:text-slate-400/80">10:30 AM</span>
-                    <Icon icon="solar:double-alt-check-broken" className="h-3 w-3 text-sky-600 dark:text-sky-400" />
+                  <div className="absolute bottom-1.5 right-2 flex items-center gap-1">
+                    <span className="text-[8px] text-slate-500/80">10:30 AM</span>
+                    <Icon icon="mdi:check-all" className="h-3 w-3 text-[#53bdeb]" />
                   </div>
                 </div>
               </div>
-            </div>
+            </WhatsAppWindow>
 
-            {/* WhatsApp badge */}
-            <div className="flex items-center gap-1.5 mt-4">
+            <div className="flex items-center gap-1.5 mt-3">
               <Icon icon="mdi:whatsapp" className="h-3.5 w-3.5 text-green-500" />
-              <span className="text-[10px] text-muted-foreground font-medium">WhatsApp Business</span>
+              <span className="text-[10px] text-muted-foreground font-medium">WhatsApp Business · as seen by client</span>
             </div>
           </div>
         </div>

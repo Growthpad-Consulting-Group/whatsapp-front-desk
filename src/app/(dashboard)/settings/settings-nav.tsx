@@ -60,7 +60,7 @@ const NAV_ITEMS: NavItem[] = [
   {
     href: "/settings/bot",
     label: "Bot Persona",
-    icon: "solar:robot-broken",
+    icon: "solar:magic-stick-3-broken",
     description: "Tone, name & personality",
     ownerOnly: true,
   },

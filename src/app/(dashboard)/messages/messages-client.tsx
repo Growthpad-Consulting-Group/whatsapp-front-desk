@@ -8,6 +8,7 @@ import { formatDateTime } from "@/lib/utils";
 import { Icon } from "@iconify/react";
 import PageHeader from "@/components/ui/PageHeader";
 import EmptyState from "@/components/ui/EmptyState";
+import { WhatsAppWindow } from "@/components/ui/WhatsAppWindow";
 import { createClient } from "@/lib/supabase/client";
 
 interface HandoffSession {
@@ -632,93 +633,81 @@ export function MessagesClient({
         </div>
 
         {/* Right Column: Live Message Feed (Chronological Feed or Focused Direct Chat) */}
-        <div className="lg:col-span-2 relative bg-card/60 dark:bg-slate-900/60 backdrop-blur-md border border-border/80 rounded-3xl p-5 shadow-sm flex flex-col h-150 overflow-hidden">
-
-          {/* Header */}
-          <div className="pb-4 border-b border-border/60 flex justify-between items-center shrink-0">
-            {activeChatPhone ? (
-              <div className="flex items-center gap-3 w-full">
+        <WhatsAppWindow
+          className="lg:col-span-2 h-150 relative"
+          name={activeChatPhone ? activeChatClientName : "Live Message Feed"}
+          subtitle={activeChatPhone ? activeChatPhone : "Stream of booking queries and bot actions"}
+          avatarInitials={activeChatPhone ? activeChatClientName : undefined}
+          avatarIcon={activeChatPhone ? undefined : "solar:chat-round-dots-broken"}
+          onBack={activeChatPhone ? () => setActiveChatPhone(null) : undefined}
+          headerRight={
+            activeChatPhone ? (
+              <button
+                className="text-[11px] font-bold text-red-300 hover:text-red-200 hover:bg-white/10 px-2.5 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                onClick={() => {
+                  const activeSession = handoffs.find((h) => h.customer_phone === activeChatPhone);
+                  if (activeSession) handleRelease(activeChatPhone, activeSession.id);
+                }}
+              >
+                <Icon icon="solar:stop-bold" className="h-3.5 w-3.5" /> End
+              </button>
+            ) : logs.length > 0 ? (
+              <span className="text-[10px] font-bold text-white/70 flex items-center gap-1 bg-white/10 px-2.5 py-1 rounded-xl">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                {logs.length} Logs
+              </span>
+            ) : undefined
+          }
+          bodyClassName="space-y-4 custom-scrollbar"
+          footer={
+            activeChatPhone ? (
+              <form onSubmit={handleSendAgentReply} className="flex gap-2 items-center">
+                <div className="flex-1 flex gap-2 items-center bg-white dark:bg-[#2a3942] rounded-2xl px-3 py-1.5 border border-border/40">
+                  <button type="button" className="text-[#667781] dark:text-[#aebac1] hover:text-[#111b21] dark:hover:text-white transition-colors shrink-0 p-1" title="Emojis">
+                    <Icon icon="mdi:emoticon-happy-outline" className="h-5.5 w-5.5" />
+                  </button>
+                  <button type="button" className="text-[#667781] dark:text-[#aebac1] hover:text-[#111b21] dark:hover:text-white transition-colors shrink-0 p-1" title="Attach">
+                    <Icon icon="mdi:paperclip" className="h-5.5 w-5.5 rotate-45" />
+                  </button>
+                  <input
+                    type="text"
+                    value={replyText}
+                    onChange={(e) => setReplyText(e.target.value)}
+                    placeholder="Type a message"
+                    disabled={sendingMessage}
+                    className="flex-1 min-w-0 bg-transparent border-none focus:outline-none focus:ring-0 text-foreground text-sm py-1 px-1 placeholder-[#667781] dark:placeholder-[#aebac1]"
+                  />
+                </div>
                 <button
-                  onClick={() => setActiveChatPhone(null)}
-                  className="h-9 w-9 rounded-xl border border-border hover:bg-muted/40 text-foreground flex items-center justify-center transition-all duration-300 hover:-translate-x-0.5 shrink-0"
+                  type="submit"
+                  disabled={!replyText.trim() && !sendingMessage}
+                  className={`h-10 w-10 rounded-full flex items-center justify-center text-white shadow-sm shrink-0 transition-all duration-300 ${replyText.trim() ? "bg-[#00a884] hover:bg-[#008f72] active:scale-95 cursor-pointer" : "bg-[#8696a0] dark:bg-[#2a3942] text-white/80 cursor-default"}`}
+                  onClick={(e) => { if (!replyText.trim()) { e.preventDefault(); toast("Voice messages are simulated! Start typing to send text.", { icon: "🎙️" }); } }}
                 >
-                  <Icon icon="solar:arrow-left-broken" className="h-5 w-5" />
+                  <Icon icon={replyText.trim() ? "mdi:send" : "mdi:microphone"} className="h-5 w-5" />
                 </button>
-                <div className="relative">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-[#128C7E] to-[#25D366] text-white flex items-center justify-center font-extrabold shadow-sm text-sm shrink-0 border border-emerald-500/20">
-                    {activeChatClientName.substring(0, 2).toUpperCase()}
-                  </div>
-                  <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 border-2 border-card animate-pulse" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-sm text-foreground truncate">{activeChatClientName}</span>
-                    <span className="px-2 py-0.5 text-[9px] font-black rounded-md bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/50 shrink-0">
-                      Live Chat
-                    </span>
-                  </div>
-                  <span className="text-[11px] text-muted-foreground block truncate">{activeChatPhone}</span>
-                </div>
-              </div>
+              </form>
             ) : (
-              <div>
-                <h2 className="text-md font-extrabold text-foreground flex items-center gap-2">
-                  <Icon icon="solar:chat-square-broken" className="h-4 w-4 text-muted-foreground" />
-                  Live Message Feed
-                </h2>
-                <p className="text-sm text-muted-foreground mt-0.5">
-                  Stream of incoming booking queries and bot actions.
-                </p>
+              <div className="text-center py-1 text-xs text-muted-foreground flex items-center justify-center gap-1.5">
+                <Icon icon="solar:user-bold" className="h-3.5 w-3.5" />
+                Select a client from the Handoff Queue, or click a client name in the feed to open direct messaging.
               </div>
-            )}
-
-            <div className="flex items-center gap-2">
-              {!activeChatPhone && logs.length > 0 && (
-                <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 bg-muted/40 px-2.5 py-1 rounded-xl">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                  {logs.length} Total Logs
-                </span>
-              )}
-              {activeChatPhone && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-xs text-destructive hover:bg-destructive/10 hover:text-destructive flex items-center gap-1 h-8 px-2.5 rounded-xl font-bold"
-                  onClick={() => {
-                    const activeSession = handoffs.find((h) => h.customer_phone === activeChatPhone);
-                    if (activeSession) handleRelease(activeChatPhone, activeSession.id);
-                  }}
-                >
-                  <Icon icon="solar:stop-bold" className="h-3.5 w-3.5" /> Stop Handoff
-                </Button>
-              )}
-            </div>
-          </div>
-
+            )
+          }
+        >
           {/* Floating Scroll to Bottom Button */}
           {showScrollBottom && (
             <button
-              onClick={() => {
-                scrollContainerRef.current?.scrollTo({
-                  top: scrollContainerRef.current.scrollHeight,
-                  behavior: "smooth",
-                });
-              }}
+              onClick={() => scrollContainerRef.current?.scrollTo({ top: scrollContainerRef.current.scrollHeight, behavior: "smooth" })}
               className="absolute bottom-20 right-8 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-slate-200 text-white dark:text-slate-900 p-2.5 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 hover:-translate-y-0.5 z-20 animate-msg"
             >
               <Icon icon="solar:arrow-left-broken" className="h-4 w-4 rotate-270" />
             </button>
           )}
 
-          {/* Scrollable Message List */}
-          <div
-            ref={scrollContainerRef}
-            onScroll={handleScroll}
-            className={`flex-1 overflow-y-auto py-4 px-4 space-y-4 custom-scrollbar rounded-2xl transition-all duration-300 ${activeChatPhone ? "whatsapp-chat-bg border border-border/40" : ""
-              }`}
-          >
+          {/* Inner scrollable wrapper to preserve ref/scroll handler */}
+          <div ref={scrollContainerRef} onScroll={handleScroll} className="h-full overflow-y-auto">
             {activeChatPhone ? (
-              /* DIRECT CHAT STATE (Oldest first, scrolls to bottom) */
               directChatLogs.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center">
                   <Icon icon="solar:chat-round-dots-bold-duotone" className="h-10 w-10 text-muted-foreground mb-2 animate-bounce" />
@@ -730,28 +719,14 @@ export function MessagesClient({
                   {directChatLogs.map((log) => {
                     const isInbound = log.direction === "inbound";
                     return (
-                      <div
-                        key={log.id}
-                        className={`flex ${isInbound ? "justify-start" : "justify-end"} animate-msg`}
-                      >
-                        <div
-                          className={`max-w-[75%] px-3.5 py-2.5 shadow-sm relative transition-all duration-300 ${isInbound
-                              ? "bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tl-none border border-slate-250/20 dark:border-slate-850/40 shadow-xs"
-                              : "bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tr-none shadow-xs"
-                            }`}
-                        >
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed pb-3 pr-8 select-text">
-                            {log.content_summary}
-                          </p>
+                      <div key={log.id} className={`flex ${isInbound ? "justify-start" : "justify-end"} animate-msg`}>
+                        <div className={`max-w-[75%] px-3.5 py-2.5 shadow-sm relative transition-all duration-300 ${isInbound ? "bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tl-none border border-slate-250/20 dark:border-slate-850/40 shadow-xs" : "bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tr-none shadow-xs"}`}>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed pb-3 pr-8 select-text">{log.content_summary}</p>
                           <div className="absolute bottom-1 right-2 flex items-center gap-1">
                             <span className="text-[9px] opacity-65 text-[#667781] dark:text-[#aebac1] font-semibold">
-                              {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </span>
-                            {!isInbound && (
-                              <div className="shrink-0 flex items-center">
-                                {getStatusIcon(log.status)}
-                              </div>
-                            )}
+                            {!isInbound && <div className="shrink-0 flex items-center">{getStatusIcon(log.status)}</div>}
                           </div>
                         </div>
                       </div>
@@ -760,13 +735,8 @@ export function MessagesClient({
                 </div>
               )
             ) : (
-              /* CHRONOLOGICAL LIVE ACTIVITY FEED (Oldest first, scrolls to bottom) */
               logs.length === 0 ? (
-                <EmptyState
-                  icon="solar:chat-broken"
-                  title="No Message Activity"
-                  description="Conversations will stream here in real-time once active on WhatsApp."
-                />
+                <EmptyState icon="solar:chat-broken" title="No Message Activity" description="Conversations will stream here in real-time once active on WhatsApp." />
               ) : (
                 <div className="space-y-1 px-2">
                   {[...logs].reverse().map((log, idx, arr) => {
@@ -775,15 +745,9 @@ export function MessagesClient({
                     const clientPhone = log.customers?.phone || (log as any).customer_phone;
                     const isSessionHandoff = handoffs.some((h) => h.customer_phone === clientPhone);
                     const prevLog = arr[idx - 1];
-                    const prevIsInbound = prevLog?.direction === "inbound";
-                    const showSenderLabel = idx === 0 || prevIsInbound !== isInbound;
-
+                    const showSenderLabel = idx === 0 || prevLog?.direction !== log.direction;
                     return (
-                      <div
-                        key={log.id}
-                        className={`flex flex-col ${isInbound ? "items-start" : "items-end"} animate-msg ${showSenderLabel ? "mt-4" : "mt-1"}`}
-                      >
-                        {/* Sender name shown once per sender switch */}
+                      <div key={log.id} className={`flex flex-col ${isInbound ? "items-start" : "items-end"} animate-msg ${showSenderLabel ? "mt-4" : "mt-1"}`}>
                         {showSenderLabel && (
                           <div className={`flex items-center gap-1.5 mb-1 px-1 ${isInbound ? "flex-row" : "flex-row-reverse"}`}>
                             <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-linear-to-tr ${isInbound ? "from-emerald-500 to-teal-400" : "from-blue-600 to-blue-400"}`}>
@@ -796,37 +760,21 @@ export function MessagesClient({
                                     if (isSessionHandoff) {
                                       setActiveChatPhone(clientPhone);
                                     } else {
-                                      const tempHandoff: HandoffSession = {
-                                        id: `temp-hand-${Date.now()}`,
-                                        customer_phone: clientPhone,
-                                        updated_at: new Date().toISOString(),
-                                        customers: { name: clientName },
-                                      };
-                                      setHandoffs((prev) => [tempHandoff, ...prev]);
+                                      setHandoffs((prev) => [{ id: `temp-hand-${Date.now()}`, customer_phone: clientPhone, updated_at: new Date().toISOString(), customers: { name: clientName } }, ...prev]);
                                       setActiveChatPhone(clientPhone);
                                       toast.success(`Opened chat thread for ${clientName}`);
                                     }
                                   }
                                 }}
                                 className="text-[11px] font-extrabold text-foreground hover:underline"
-                              >
-                                {clientName}
-                              </button>
+                              >{clientName}</button>
                             ) : (
                               <span className="text-[11px] font-extrabold text-foreground">Booking Assistant</span>
                             )}
                           </div>
                         )}
-
-                        {/* Bubble */}
-                        <div className={`max-w-[72%] px-3.5 py-2.5 shadow-sm relative ${
-                          isInbound
-                            ? "bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tl-none border border-slate-200/40 dark:border-slate-700/30"
-                            : "bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tr-none"
-                        }`}>
-                          <p className="text-sm whitespace-pre-wrap leading-relaxed pb-4 pr-10 select-text">
-                            {log.content_summary}
-                          </p>
+                        <div className={`max-w-[72%] px-3.5 py-2.5 shadow-sm relative ${isInbound ? "bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tl-none border border-slate-200/40 dark:border-slate-700/30" : "bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tr-none"}`}>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed pb-4 pr-10 select-text">{log.content_summary}</p>
                           <div className="absolute bottom-1.5 right-2.5 flex items-center gap-1">
                             <span className="text-[9px] opacity-60 font-semibold text-[#667781] dark:text-[#aebac1]">
                               {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
@@ -841,71 +789,7 @@ export function MessagesClient({
               )
             )}
           </div>
-
-          {/* Footer Input Bar */}
-          <div className="pt-3 border-t border-border/60 shrink-0">
-            {activeChatPhone ? (
-              <form onSubmit={handleSendAgentReply} className="flex gap-2 items-center">
-                <div className="flex-1 flex gap-2 items-center bg-[#f0f2f5] dark:bg-[#202c33] rounded-2xl px-3 py-1.5 border border-border/40">
-                  {/* Emoji Button */}
-                  <button
-                    type="button"
-                    className="text-[#667781] dark:text-[#aebac1] hover:text-[#111b21] dark:hover:text-white transition-colors shrink-0 p-1"
-                    title="Emojis"
-                  >
-                    <Icon icon="mdi:emoticon-happy-outline" className="h-5.5 w-5.5" />
-                  </button>
-
-                  {/* Attachment Button */}
-                  <button
-                    type="button"
-                    className="text-[#667781] dark:text-[#aebac1] hover:text-[#111b21] dark:hover:text-white transition-colors shrink-0 p-1"
-                    title="Attach"
-                  >
-                    <Icon icon="mdi:paperclip" className="h-5.5 w-5.5 rotate-45" />
-                  </button>
-
-                  <input
-                    type="text"
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Type a message"
-                    disabled={sendingMessage}
-                    className="flex-1 min-w-0 bg-transparent border-none focus:outline-none focus:ring-0 text-foreground text-sm py-1 px-1 placeholder-[#667781] dark:placeholder-[#aebac1]"
-                  />
-                </div>
-
-                {/* Circular Send Button (Transforms to Microphone if input is empty) */}
-                <button
-                  type="submit"
-                  disabled={!replyText.trim() && !sendingMessage}
-                  className={`h-10 w-10 rounded-full flex items-center justify-center text-white shadow-sm shrink-0 transition-all duration-300 ${replyText.trim()
-                      ? "bg-[#00a884] hover:bg-[#008f72] active:scale-95 cursor-pointer"
-                      : "bg-[#8696a0] dark:bg-[#2a3942] text-white/80 cursor-default"
-                    }`}
-                  title={replyText.trim() ? "Send message" : "Voice message placeholder"}
-                  onClick={(e) => {
-                    if (!replyText.trim()) {
-                      e.preventDefault();
-                      toast("Voice messages are simulated! Start typing to send text.", { icon: "🎙️" });
-                    }
-                  }}
-                >
-                  <Icon
-                    icon={replyText.trim() ? "mdi:send" : "mdi:microphone"}
-                    className="h-5 w-5"
-                  />
-                </button>
-              </form>
-            ) : (
-              <div className="text-center py-2 text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-                <Icon icon="solar:user-bold" className="h-3.5 w-3.5" />
-                Select a client from the Handoff Queue on the left, or click on a client's name inside the feed logs to open direct messaging.
-              </div>
-            )}
-          </div>
-
-        </div>
+        </WhatsAppWindow>
       </div>
     </div>
   );

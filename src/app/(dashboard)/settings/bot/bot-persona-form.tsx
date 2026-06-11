@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Icon } from "@iconify/react";
 import { cn } from "@/lib/utils";
 import { updateBotPersonaAction } from "@/actions/business";
+import { WhatsAppWindow } from "@/components/ui/WhatsAppWindow";
 
 type Tone = "warm" | "professional" | "casual";
 
@@ -12,30 +13,75 @@ const TONES: {
   label: string;
   icon: string;
   tagline: string;
-  preview: string;
+  botMessage: string;
+  clientReply: string;
+  botFollowup: string;
 }[] = [
   {
     value: "warm",
     label: "Warm & Friendly",
     icon: "solar:sun-broken",
     tagline: "Approachable, emoji-friendly, feels human",
-    preview: "Hi Sarah! Welcome to Glow Studio ✨\n\nSo glad you reached out! Here are our services — just reply with a number and we'll get you booked in:\n\n1. Deep Tissue Massage (60 mins · KES 3,500)\n2. Swedish Massage (45 mins · KES 2,800)",
+    botMessage: "Hi Sarah! Welcome to Glow Studio 🗓️\n\nI'm Ava, your virtual booking assistant. Please reply with the number of the service you'd like to book:\n\n1. Deep Tissue Massage (60 mins · KES 3,500)\n2. Swedish Massage (45 mins · KES 2,800)\n3. Hot Stone Therapy (90 mins · KES 5,000)",
+    clientReply: "1",
+    botFollowup: "Great choice! 🙌 Here are the next available slots for your Deep Tissue Massage:\n\n1. Mon, 16 Jun · 10:00 AM\n2. Mon, 16 Jun · 2:00 PM\n3. Tue, 17 Jun · 11:00 AM\n\nWhich works best for you?",
   },
   {
     value: "professional",
     label: "Professional",
     icon: "solar:buildings-2-broken",
     tagline: "Polished, concise, business-like",
-    preview: "Good day, Sarah. Thank you for contacting Glow Studio.\n\nPlease select a service to proceed with your booking:\n\n1. Deep Tissue Massage (60 mins · KES 3,500)\n2. Swedish Massage (45 mins · KES 2,800)",
+    botMessage: "Good day, Sarah. Thank you for contacting Glow Studio.\n\nPlease select a service to proceed with your booking:\n\n1. Deep Tissue Massage (60 mins · KES 3,500)\n2. Swedish Massage (45 mins · KES 2,800)\n3. Hot Stone Therapy (90 mins · KES 5,000)",
+    clientReply: "1",
+    botFollowup: "Noted. The following slots are available for your Deep Tissue Massage:\n\n1. Mon, 16 Jun · 10:00 AM\n2. Mon, 16 Jun · 2:00 PM\n3. Tue, 17 Jun · 11:00 AM\n\nPlease reply with your preferred slot number.",
   },
   {
     value: "casual",
     label: "Casual & Fun",
     icon: "solar:smile-circle-broken",
     tagline: "Laid-back, conversational, playful",
-    preview: "Hey Sarah! 👋 You've reached Glow Studio — let's get you sorted!\n\nPick a vibe:\n\n1. Deep Tissue Massage (60 mins · KES 3,500)\n2. Swedish Massage (45 mins · KES 2,800)",
+    botMessage: "Hey Sarah! 👋 You've reached Glow Studio — let's get you sorted!\n\nPick a service:\n\n1. Deep Tissue Massage (60 mins · KES 3,500)\n2. Swedish Massage (45 mins · KES 2,800)\n3. Hot Stone Therapy (90 mins · KES 5,000)",
+    clientReply: "1",
+    botFollowup: "Ooh nice pick! 💆 Here are some slots that work:\n\n1. Mon, 16 Jun · 10:00 AM\n2. Mon, 16 Jun · 2:00 PM\n3. Tue, 17 Jun · 11:00 AM\n\nJust reply with a number!",
   },
 ];
+
+function ChatBubble({
+  text,
+  isBot,
+  senderName,
+  time,
+}: {
+  text: string;
+  isBot: boolean;
+  senderName?: string;
+  time: string;
+}) {
+  return (
+    <div className={cn("flex w-full", isBot ? "justify-start" : "justify-end")}>
+      <div className={cn("max-w-[85%] flex flex-col", isBot ? "items-start" : "items-end")}>
+        {senderName && (
+          <span className="text-[10px] font-semibold text-muted-foreground px-1 mb-1">
+            {senderName}
+          </span>
+        )}
+        <div
+          className={cn(
+            "relative px-3 py-2 rounded-2xl shadow-xs text-xs leading-relaxed whitespace-pre-wrap",
+            isBot
+              ? "bg-white dark:bg-slate-800 border border-border/60 text-foreground rounded-tl-sm"
+              : "bg-[#d9fdd3] dark:bg-[#005c4b] text-slate-800 dark:text-slate-100 rounded-tr-sm"
+          )}
+        >
+          {text}
+          <span className={cn("block text-right text-[9px] mt-1 opacity-60", isBot ? "text-muted-foreground" : "text-slate-600 dark:text-slate-300")}>
+            {time}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function BotPersonaForm({
   botName,
@@ -53,6 +99,8 @@ export function BotPersonaForm({
   const [isPending, startTransition] = useTransition();
 
   const selectedTone = TONES.find((t) => t.value === tone) ?? TONES[0];
+
+  const previewBotMessage = selectedTone.botMessage.replace(/Ava/g, name || "Front Desk");
 
   function handleSave() {
     setError(null);
@@ -73,11 +121,11 @@ export function BotPersonaForm({
       {/* Bot Name */}
       <div className="bg-card border border-border/60 rounded-2xl p-6 space-y-4">
         <div className="flex items-center gap-2">
-          <Icon icon="solar:robot-broken" className="h-4 w-4 text-muted-foreground" />
+          <Icon icon="solar:magic-stick-3-broken" className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-sm font-bold text-foreground">Bot Name</h3>
         </div>
         <p className="text-xs text-muted-foreground">
-          The name your bot uses to identify itself to clients. Keep it short and memorable.
+          The name your bot uses to introduce itself to clients. Keep it short and memorable — e.g. Ava, Alex, or simply Front Desk.
         </p>
         <div className="flex items-center gap-3 max-w-sm">
           <input
@@ -90,19 +138,16 @@ export function BotPersonaForm({
             className="flex-1 h-10 rounded-xl border border-border bg-background px-3.5 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          Preview: <span className="font-semibold text-foreground">&ldquo;Hi! I&apos;m {name || "Front Desk"}, your virtual assistant at [Business Name].&rdquo;</span>
-        </p>
       </div>
 
-      {/* Tone Selector */}
-      <div className="bg-card border border-border/60 rounded-2xl p-6 space-y-4">
+      {/* Tone Selector + Live Preview */}
+      <div className="bg-card border border-border/60 rounded-2xl p-6 space-y-5">
         <div className="flex items-center gap-2">
           <Icon icon="solar:chat-square-broken" className="h-4 w-4 text-muted-foreground" />
           <h3 className="text-sm font-bold text-foreground">Communication Tone</h3>
         </div>
         <p className="text-xs text-muted-foreground">
-          Choose how the bot talks to your clients. This affects the greeting, slot confirmations, and follow-up messages.
+          Choose how the bot talks to your clients. Affects the greeting, slot confirmations, and follow-up messages.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -140,19 +185,27 @@ export function BotPersonaForm({
           ))}
         </div>
 
-        {/* Live preview */}
-        <div className="rounded-2xl bg-muted/30 border border-border/50 p-4 space-y-2">
+        {/* WhatsApp Chat Preview */}
+        <div className="space-y-2">
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
             <Icon icon="solar:eye-broken" className="h-3.5 w-3.5" />
-            Preview — Initial greeting
+            Live preview — how a real conversation looks
           </p>
-          <div className="bg-background border border-border/60 rounded-xl p-3.5">
-            <p className="text-xs text-foreground whitespace-pre-wrap leading-relaxed font-mono">
-              {selectedTone.preview}
-            </p>
-          </div>
+
+          <WhatsAppWindow
+            name={`${name || "Front Desk"} · Glow Studio`}
+            subtitle="online"
+            avatarIcon="solar:magic-stick-3-broken"
+            headerRight={<Icon icon="solar:phone-broken" className="h-4 w-4 text-white/70" />}
+            bodyClassName="flex flex-col gap-3 min-h-65"
+          >
+            <ChatBubble text={previewBotMessage} isBot={true} senderName={name || "Front Desk"} time="10:02 AM" />
+            <ChatBubble text={selectedTone.clientReply} isBot={false} senderName="Sarah" time="10:03 AM" />
+            <ChatBubble text={selectedTone.botFollowup} isBot={true} time="10:03 AM" />
+          </WhatsAppWindow>
+
           <p className="text-[10px] text-muted-foreground">
-            Actual messages use your real business name, client names, and live service catalogue.
+            Preview uses sample data. Real messages will use your actual business name, client names, and live service catalogue.
           </p>
         </div>
       </div>
