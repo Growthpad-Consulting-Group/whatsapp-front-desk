@@ -768,75 +768,72 @@ export function MessagesClient({
                   description="Conversations will stream here in real-time once active on WhatsApp."
                 />
               ) : (
-                <div className="space-y-3.5">
-                  {[...logs].reverse().map((log) => {
+                <div className="space-y-1 px-2">
+                  {[...logs].reverse().map((log, idx, arr) => {
                     const isInbound = log.direction === "inbound";
                     const clientName = log.customers?.name || log.customers?.phone || "Client";
                     const clientPhone = log.customers?.phone || (log as any).customer_phone;
                     const isSessionHandoff = handoffs.some((h) => h.customer_phone === clientPhone);
+                    const prevLog = arr[idx - 1];
+                    const prevIsInbound = prevLog?.direction === "inbound";
+                    const showSenderLabel = idx === 0 || prevIsInbound !== isInbound;
 
                     return (
                       <div
                         key={log.id}
-                        className={`group p-4 border border-border/40 hover:border-border rounded-2xl transition-all duration-300 hover:bg-muted/10 flex flex-col gap-2 relative animate-msg`}
+                        className={`flex flex-col ${isInbound ? "items-start" : "items-end"} animate-msg ${showSenderLabel ? "mt-4" : "mt-1"}`}
                       >
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="flex items-center gap-2">
-                            <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-inner bg-gradient-to-tr ${isInbound ? "from-emerald-500 to-teal-400" : "from-blue-600 to-blue-400"
-                              }`}>
-                              {isInbound ? clientName.substring(0, 2).toUpperCase() : "Bot"}
+                        {/* Sender name shown once per sender switch */}
+                        {showSenderLabel && (
+                          <div className={`flex items-center gap-1.5 mb-1 px-1 ${isInbound ? "flex-row" : "flex-row-reverse"}`}>
+                            <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white bg-linear-to-tr ${isInbound ? "from-emerald-500 to-teal-400" : "from-blue-600 to-blue-400"}`}>
+                              {isInbound ? clientName.substring(0, 2).toUpperCase() : "BA"}
                             </div>
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  onClick={() => {
-                                    if (clientPhone) {
-                                      // If customer is in handoff state, we can select them immediately to chat!
-                                      // If not, we can simulate putting them in handoff or just let the user view history!
-                                      if (isSessionHandoff) {
-                                        setActiveChatPhone(clientPhone);
-                                      } else {
-                                        // Auto-create a local handoff session to make direct messaging work seamlessly
-                                        const tempHandoff: HandoffSession = {
-                                          id: `temp-hand-${Date.now()}`,
-                                          customer_phone: clientPhone,
-                                          updated_at: new Date().toISOString(),
-                                          customers: { name: clientName },
-                                        };
-                                        setHandoffs((prev) => [tempHandoff, ...prev]);
-                                        setActiveChatPhone(clientPhone);
-                                        toast.success(`Opened chat thread for ${clientName}`);
-                                      }
+                            {isInbound ? (
+                              <button
+                                onClick={() => {
+                                  if (clientPhone) {
+                                    if (isSessionHandoff) {
+                                      setActiveChatPhone(clientPhone);
+                                    } else {
+                                      const tempHandoff: HandoffSession = {
+                                        id: `temp-hand-${Date.now()}`,
+                                        customer_phone: clientPhone,
+                                        updated_at: new Date().toISOString(),
+                                        customers: { name: clientName },
+                                      };
+                                      setHandoffs((prev) => [tempHandoff, ...prev]);
+                                      setActiveChatPhone(clientPhone);
+                                      toast.success(`Opened chat thread for ${clientName}`);
                                     }
-                                  }}
-                                  className="text-sm font-extrabold text-foreground hover:underline text-left"
-                                >
-                                  {isInbound ? clientName : "Booking Assistant"}
-                                </button>
-                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-black border ${isInbound
-                                    ? "bg-teal-50 dark:bg-teal-950/20 text-teal-700 dark:text-teal-400 border-teal-200/50"
-                                    : "bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 border-blue-200/50"
-                                  }`}>
-                                  {isInbound ? "INBOUND" : "OUTBOUND"}
-                                </span>
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">{clientPhone || "WhatsApp Link"}</p>
-                            </div>
-                          </div>
-                          <span className="text-[9px] text-muted-foreground">
-                            {formatDateTime(log.timestamp, timezone)}
-                          </span>
-                        </div>
-
-                        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300 bg-muted/20 dark:bg-slate-800/10 p-3 rounded-xl border border-border/30 whitespace-pre-wrap">
-                          {log.content_summary}
-                        </p>
-
-                        {!isInbound && (
-                          <div className="flex justify-end pr-1">
-                            {getStatusIcon(log.status)}
+                                  }
+                                }}
+                                className="text-[11px] font-extrabold text-foreground hover:underline"
+                              >
+                                {clientName}
+                              </button>
+                            ) : (
+                              <span className="text-[11px] font-extrabold text-foreground">Booking Assistant</span>
+                            )}
                           </div>
                         )}
+
+                        {/* Bubble */}
+                        <div className={`max-w-[72%] px-3.5 py-2.5 shadow-sm relative ${
+                          isInbound
+                            ? "bg-white dark:bg-[#202c33] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tl-none border border-slate-200/40 dark:border-slate-700/30"
+                            : "bg-[#d9fdd3] dark:bg-[#005c4b] text-[#111b21] dark:text-[#e9edef] rounded-2xl rounded-tr-none"
+                        }`}>
+                          <p className="text-sm whitespace-pre-wrap leading-relaxed pb-4 pr-10 select-text">
+                            {log.content_summary}
+                          </p>
+                          <div className="absolute bottom-1.5 right-2.5 flex items-center gap-1">
+                            <span className="text-[9px] opacity-60 font-semibold text-[#667781] dark:text-[#aebac1]">
+                              {new Date(log.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </span>
+                            {!isInbound && getStatusIcon(log.status)}
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
