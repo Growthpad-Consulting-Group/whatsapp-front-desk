@@ -183,6 +183,12 @@ export function Sidebar({ businessName, staffName, isOpen }: SidebarProps) {
                 <span>Sign Out</span>
               </button>
             </form>
+            <Link
+              href="/privacy"
+              className="text-[10px] text-center text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400 transition-colors py-1"
+            >
+              Privacy Policy
+            </Link>
           </div>
         </div>
       </div>

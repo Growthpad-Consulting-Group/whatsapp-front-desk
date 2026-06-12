@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
@@ -123,9 +124,9 @@ export default function AcceptInvitePage() {
               </div>
               <h1 className="text-xl font-bold text-foreground">Link expired</h1>
               <p className="text-sm text-muted-foreground">{sessionError}</p>
-              <a href="/login" className="text-sm text-primary font-semibold hover:underline mt-2">
+              <Link href="/login" className="text-sm text-primary font-semibold hover:underline mt-2">
                 Back to login
-              </a>
+              </Link>
             </div>
           )}
 

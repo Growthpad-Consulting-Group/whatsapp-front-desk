@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { signupAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,7 +59,11 @@ export function SignupForm() {
         Create account
       </Button>
       <p className="text-xs text-center text-muted-foreground">
-        By signing up you agree to our terms of service and privacy policy.
+        By signing up you agree to our{" "}
+        <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground transition-colors">
+          privacy policy
+        </Link>
+        .
       </p>
     </form>
     </GlassCard>

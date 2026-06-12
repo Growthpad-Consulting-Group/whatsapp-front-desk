@@ -327,9 +327,9 @@ export function DashboardClient({
           <span className="font-medium text-foreground">
             <span className="text-amber-600 dark:text-amber-400 font-bold">{overdueInvoices} overdue {overdueInvoices === 1 ? "invoice" : "invoices"}</span> need attention.
           </span>
-          <a href="/invoices?status=overdue" className="ml-auto text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline shrink-0">
+          <Link href="/invoices?status=overdue" className="ml-auto text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline shrink-0">
             Review →
-          </a>
+          </Link>
         </div>
       )}
 
