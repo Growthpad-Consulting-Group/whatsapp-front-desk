@@ -58,20 +58,20 @@ export async function POST(request: NextRequest) {
 
   // 3. Handle Inbound Messages
   if (value.messages) {
-    const displayPhoneNumber = value.metadata?.display_phone_number;
-    if (!displayPhoneNumber) {
+    const phoneNumberId = value.metadata?.phone_number_id;
+    if (!phoneNumberId) {
       return NextResponse.json({ received: true });
     }
 
-    // Resolve business by matching display_phone_number
+    // Resolve business by matching phone_number_id (stored via Settings > Connections)
     const { data: business } = await supabase
       .from("businesses")
       .select("id")
-      .or(`whatsapp_number.eq.${displayPhoneNumber},whatsapp_number.eq.+${displayPhoneNumber}`)
+      .eq("whatsapp_phone_number_id", phoneNumberId)
       .single();
 
     if (!business) {
-      console.warn(`[webhook] Received message for unknown number: ${displayPhoneNumber}`);
+      console.warn(`[webhook] Received message for unknown phone_number_id: ${phoneNumberId}`);
       // Return 200 to keep Meta happy
       return NextResponse.json({ received: true });
     }
