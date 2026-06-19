@@ -24,8 +24,11 @@ export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   const signature = request.headers.get("X-Hub-Signature-256");
 
+  console.log("[webhook] POST received, signature present:", !!signature);
+
   // 1. Verify Meta signature
   const isValid = await verifyWhatsAppSignature(rawBody, signature);
+  console.log("[webhook] signature valid:", isValid);
   if (!isValid) {
     return new Response("Unauthorized Signature", { status: 401 });
   }
