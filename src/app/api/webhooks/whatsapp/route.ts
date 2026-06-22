@@ -74,17 +74,17 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (!business) {
-      console.warn(`[webhook] Received message for unknown phone_number_id: ${phoneNumberId}`);
+      console.warn(`[webhook] No business found for phone_number_id: ${phoneNumberId}`);
       // Return 200 to keep Meta happy
       return NextResponse.json({ received: true });
     }
 
+    console.log(`[webhook] Business found: ${business.id}`);
     const contactName = value.contacts?.[0]?.profile?.name || "Client";
 
     for (const msg of value.messages) {
-      const fromPhone = msg.from; // Customer phone (e.g. "254712345678")
-      
-      // Get message text depending on type (text, interactive etc.)
+      const fromPhone = msg.from;
+
       let messageText = "";
       if (msg.type === "text" && msg.text?.body) {
         messageText = msg.text.body;
@@ -94,15 +94,16 @@ export async function POST(request: NextRequest) {
         messageText = msg.button.text;
       }
 
+      console.log(`[webhook] msg from ${fromPhone}, type=${msg.type}, text="${messageText}"`);
       if (!messageText) continue;
 
       try {
-        // Run state machine processor
-        // We prepend '+' to fromPhone if it's missing to standardize on E.164 formats in our DB
         const cleanFrom = fromPhone.startsWith("+") ? fromPhone : `+${fromPhone}`;
+        console.log(`[webhook] calling handleWhatsAppMessage for ${cleanFrom}`);
         await handleWhatsAppMessage(business.id, cleanFrom, messageText, contactName);
+        console.log(`[webhook] handleWhatsAppMessage completed`);
       } catch (err: any) {
-        console.error(`Error processing message ${msg.id}:`, err.message);
+        console.error(`[webhook] Error processing message ${msg.id}:`, err.message, err.stack);
       }
     }
   }
