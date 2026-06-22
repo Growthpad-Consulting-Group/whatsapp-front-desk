@@ -38,6 +38,8 @@ export async function verifyWhatsAppSignature(
     .update(rawBody)
     .digest("hex");
 
+  console.log("[crypto] expected:", expectedSignature.slice(0, 16), "computed:", computedSignature.slice(0, 16), "secret_len:", appSecret.length);
+
   try {
     return crypto.timingSafeEqual(
       Buffer.from(expectedSignature, "hex"),
