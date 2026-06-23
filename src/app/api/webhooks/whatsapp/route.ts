@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyWhatsAppSignature } from "@/lib/whatsapp/crypto";
 import { handleWhatsAppMessage } from "@/lib/whatsapp/state-machine";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -46,14 +46,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  let supabase: Awaited<ReturnType<typeof createClient>>;
-  try {
-    supabase = await createClient();
-    console.log("[webhook] supabase client created");
-  } catch (err: any) {
-    console.error("[webhook] failed to create supabase client:", err.message);
-    return NextResponse.json({ received: true });
-  }
+  const supabase = createAdminClient();
+  console.log("[webhook] supabase client created");
 
   // 2. Handle Status Updates (sent, delivered, read)
   if (value.statuses) {
