@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import { getAvailableSlots } from "@/lib/availability/engine";
 import { createWhatsAppClient } from "./client";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
@@ -41,7 +41,7 @@ export async function handleWhatsAppMessage(
   messageText: string,
   customerProfileName?: string
 ): Promise<void> {
-  const supabase = await createClient();
+  const supabase = createAdminClient();
   const text = messageText.trim();
 
   // 1. Resolve business config
