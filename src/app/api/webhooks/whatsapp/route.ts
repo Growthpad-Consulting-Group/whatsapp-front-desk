@@ -24,11 +24,8 @@ export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   const signature = request.headers.get("X-Hub-Signature-256");
 
-  console.log("[webhook] POST received, signature present:", !!signature);
-
   // 1. Verify Meta signature
   const isValid = await verifyWhatsAppSignature(rawBody, signature);
-  console.log("[webhook] signature valid:", isValid);
   if (!isValid) {
     return new Response("Unauthorized Signature", { status: 401 });
   }
@@ -47,7 +44,6 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = createAdminClient();
-  console.log("[webhook] supabase client created");
 
   // 2. Handle Status Updates (sent, delivered, read)
   if (value.statuses) {
@@ -80,7 +76,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    console.log(`[webhook] Business found: ${business.id}`);
     const contactName = value.contacts?.[0]?.profile?.name || "Client";
 
     for (const msg of value.messages) {
@@ -95,14 +90,11 @@ export async function POST(request: NextRequest) {
         messageText = msg.button.text;
       }
 
-      console.log(`[webhook] msg from ${fromPhone}, type=${msg.type}, text="${messageText}"`);
       if (!messageText) continue;
 
       try {
         const cleanFrom = fromPhone.startsWith("+") ? fromPhone : `+${fromPhone}`;
-        console.log(`[webhook] calling handleWhatsAppMessage for ${cleanFrom}`);
         await handleWhatsAppMessage(business.id, cleanFrom, messageText, contactName);
-        console.log(`[webhook] handleWhatsAppMessage completed`);
       } catch (err: any) {
         console.error(`[webhook] Error processing message ${msg.id}:`, err.message, err.stack);
       }
