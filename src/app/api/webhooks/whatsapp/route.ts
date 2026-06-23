@@ -46,7 +46,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true });
   }
 
-  const supabase = await createClient();
+  let supabase: Awaited<ReturnType<typeof createClient>>;
+  try {
+    supabase = await createClient();
+    console.log("[webhook] supabase client created");
+  } catch (err: any) {
+    console.error("[webhook] failed to create supabase client:", err.message);
+    return NextResponse.json({ received: true });
+  }
 
   // 2. Handle Status Updates (sent, delivered, read)
   if (value.statuses) {
